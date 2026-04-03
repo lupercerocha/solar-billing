@@ -11,7 +11,6 @@
 <meta name="apple-mobile-web-app-title" content="Solar Billing">
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'><rect width='180' height='180' rx='36' fill='%23172334'/><circle cx='90' cy='80' r='24' fill='none' stroke='%233AA094' stroke-width='4.5'/><line x1='90' y1='44' x2='90' y2='52' stroke='%233AA094' stroke-width='4.5' stroke-linecap='round'/><line x1='90' y1='108' x2='90' y2='116' stroke='%233AA094' stroke-width='4.5' stroke-linecap='round'/><line x1='54' y1='80' x2='62' y2='80' stroke='%233AA094' stroke-width='4.5' stroke-linecap='round'/><line x1='118' y1='80' x2='126' y2='80' stroke='%233AA094' stroke-width='4.5' stroke-linecap='round'/><text x='90' y='156' text-anchor='middle' fill='%233AA094' font-family='sans-serif' font-weight='bold' font-size='20'>SOLAR</text></svg>">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
 :root{--dark:#172334;--accent:#3AA094;--light:#F2F1F1;--white:#fff;--danger:#D9534F;--green:#4ECB71}
@@ -301,9 +300,6 @@ let history = [];
   dz.addEventListener("drop", e => { e.preventDefault(); dz.classList.remove("hover"); handleFile(e.dataTransfer.files[0]); });
   fi.addEventListener("change", e => { handleFile(e.target.files[0]); e.target.value = ""; });
 
-  // PDF.js worker
-  if(window.pdfjsLib) pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
-
   calc();
   updateBadge();
 })();
@@ -316,41 +312,12 @@ async function handleFile(file) {
   const dz = document.getElementById("dropZone");
   dz.classList.add("loading");
   document.getElementById("dropTxt").textContent = file.name;
-  showStatus("loading","");
+  showStatus("loading-ai","");
 
   try {
     const ab = await file.arrayBuffer();
     const base64 = arrayBufferToBase64(ab);
-    
-    // Tentar primeiro: PDF.js local
-    let data = null;
-    try {
-      if(window.pdfjsLib) {
-        const pdf = await pdfjsLib.getDocument({data: ab.slice(0)}).promise;
-        let allItems = [];
-        for(let i=1; i<=pdf.numPages; i++){
-          const page = await pdf.getPage(i);
-          const tc = await page.getTextContent();
-          allItems = allItems.concat(tc.items.map(it => it.str));
-        }
-        // Juntar de várias formas para maximizar chance de match
-        const text1 = allItems.join(" ");
-        const text2 = allItems.join("");
-        const text3 = allItems.filter(s => s.trim()).join(" ");
-        data = parseEnergisa(text1, text2, text3);
-      }
-    } catch(e) { console.log("PDF.js falhou:", e); }
-
-    // Se não extraiu dados suficientes, usar IA como fallback
-    if(!data || !data.consumo_kwh) {
-      console.log("Fallback para IA...");
-      showStatus("loading-ai","");
-      try {
-        data = await extractWithAI(base64);
-      } catch(e) {
-        console.log("IA falhou:", e);
-      }
-    }
+    const data = await extractWithAI(base64);
 
     if(data && data.consumo_kwh) {
       fillFromPDF(data);
@@ -400,109 +367,6 @@ async function extractWithAI(base64Data) {
     cosip: parsed.cosip || 0,
     adicionais: parsed.adicionais || 0
   };
-}
-
-// ─── Local PDF parsing (multiple text join strategies) ───
-function parseEnergisa(text1, text2, text3) {
-  const r = { mes:null, ano:null, consumo_kwh:0, energia_injetada:0, preco_unit:0, cosip:0, adicionais:0 };
-  
-  // Normalizar espaços em todas as versões
-  const texts = [text1, text2, text3].map(t => t.replace(/\s+/g, " "));
-  const allText = texts.join(" ||| ");
-
-  // ─── Mês/Ano ───
-  for(const t of texts) {
-    const m = t.match(/(Janeiro|Fevereiro|Mar[çc]o|Abril|Maio|Junho|Julho|Agosto|Setembro|Outubro|Novembro|Dezembro)\s*[\/\s]\s*(20\d{2})/i);
-    if(m) { r.mes = m[1].toLowerCase(); r.ano = parseInt(m[2]); break; }
-  }
-
-  // ─── Consumo kWh (Energia ativa) ───
-  // Padrão: "Energia ativa em kWh" ... "Ponta" ... leitura_ant leitura_atual const consumo
-  for(const t of texts) {
-    // Tentar padrão completo
-    let m = t.match(/Energia\s*ativa\s*em\s*kWh[\s\S]{0,30}?Ponta\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)/i);
-    if(m) { r.consumo_kwh = parseInt(m[4]); break; }
-    // Padrão relaxado: qualquer 4 números após "ativa" e "Ponta"
-    m = t.match(/ativa[\s\S]{0,40}?Ponta[\s\S]{0,20}?(\d{2,5})\s+(\d{2,5})\s+(\d{1,2})\s+(\d{2,5})/i);
-    if(m) { r.consumo_kwh = parseInt(m[4]); break; }
-  }
-  // Fallback: procurar "Consumo kWh" seguido de número na tabela do medidor
-  if(!r.consumo_kwh) {
-    for(const t of texts) {
-      const m = t.match(/Consumo\s*kWh[\s:]*(\d{2,5})/i);
-      if(m) { r.consumo_kwh = parseInt(m[1]); break; }
-    }
-  }
-  // Fallback: procurar padrão "NNN,00" ou "NNN.00" após "Consumo em kWh KWH"
-  if(!r.consumo_kwh) {
-    for(const t of texts) {
-      const m = t.match(/Consumo\s*em\s*kWh[\s\S]{0,20}?KWH[\s\S]{0,10}?(\d{2,5})[,.]00/i);
-      if(m) { r.consumo_kwh = parseInt(m[1]); break; }
-    }
-  }
-
-  // ─── Energia Injetada ───
-  for(const t of texts) {
-    let m = t.match(/Energia\s*injetada[\s\S]{0,30}?Ponta\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)/i);
-    if(m) { r.energia_injetada = parseInt(m[4]); break; }
-    m = t.match(/injetada[\s\S]{0,40}?Ponta[\s\S]{0,20}?(\d{2,6})\s+(\d{2,6})\s+(\d{1,2})\s+(\d{2,5})/i);
-    if(m) { r.energia_injetada = parseInt(m[4]); break; }
-  }
-  // Fallback INJ Ponta
-  if(!r.energia_injetada) {
-    for(const t of texts) {
-      const m = t.match(/INJ\s*Ponta[\s\S]{0,30}?(\d{2,6})\s+(\d{2,6})\s+\d\s*[,.]?\s*0{0,2}\s+(\d{2,5})/i);
-      if(m) { r.energia_injetada = parseInt(m[3]); break; }
-    }
-  }
-
-  // ─── Preço unitário com tributos ───
-  // Padrão: número com 6 casas decimais (0,877990 / 0,902460 etc)
-  for(const t of texts) {
-    // Procurar próximo a "Consumo em kWh"
-    const chunk = t.match(/Consumo\s*em\s*kWh[\s\S]{0,120}/i);
-    if(chunk) {
-      // Procurar padrão 0,XXXXXX (6 casas)
-      const prices = chunk[0].match(/0[,.]\d{5,6}/g);
-      if(prices && prices.length) {
-        r.preco_unit = parseBR(prices[0]);
-        break;
-      }
-    }
-  }
-  // Fallback: procurar qualquer 0,8XXXXX ou 0,9XXXXX no texto
-  if(!r.preco_unit) {
-    for(const t of texts) {
-      const m = t.match(/0[,.][89]\d{4,5}/);
-      if(m) { r.preco_unit = parseBR(m[0]); break; }
-    }
-  }
-
-  // ─── COSIP ───
-  for(const t of texts) {
-    const m = t.match(/CONTRIB[\s\S]{0,30}?ILUM[\s\S]{0,20}?(\d{1,3}[,.]\d{2})/i);
-    if(m) { r.cosip = parseBR(m[1]); break; }
-  }
-  // Fallback
-  if(!r.cosip) {
-    for(const t of texts) {
-      const m = t.match(/SERV[\s.]*ILUM[\s\S]{0,30}?(\d{1,3}[,.]\d{2})/i);
-      if(m) { r.cosip = parseBR(m[1]); break; }
-    }
-  }
-
-  // ─── Adicionais de Bandeira ───
-  for(const t of texts) {
-    const m = t.match(/Adic[\s\S]{0,15}?B[\s.]*(?:Amarela|Vermelha|Verde)[\s\S]{0,30}?(\d{1,3}[,.]\d{2})/i);
-    if(m) { r.adicionais = parseBR(m[1]); break; }
-  }
-
-  return r;
-}
-
-function parseBR(s) {
-  if(!s) return 0;
-  return parseFloat(String(s).replace(/\./g,"").replace(",",".")) || 0;
 }
 
 function fillFromPDF(data) {
