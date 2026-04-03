@@ -338,35 +338,51 @@ function arrayBufferToBase64(buffer) {
   return btoa(binary);
 }
 
-// ─── Fallback: Anthropic API ───
+// ─── Extração via Anthropic API ───
 async function extractWithAI(base64Data) {
-  const resp = await fetch("https://api.anthropic.com/v1/messages", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      model: "claude-sonnet-4-20250514",
-      max_tokens: 1000,
-      messages: [{
-        role: "user",
-        content: [
-          { type: "document", source: { type: "base64", media_type: "application/pdf", data: base64Data } },
-          { type: "text", text: 'Extraia dados desta conta Energisa. Responda APENAS JSON puro sem markdown:\n{"mes":"março","ano":2026,"consumo_kwh":317,"energia_injetada":1575,"preco_unit":0.877990,"cosip":13.91,"adicionais":0}\n- mes: mês referência em minúsculo\n- ano: ano referência\n- consumo_kwh: inteiro, Energia ativa em kWh (Consumo kWh do medidor)\n- energia_injetada: inteiro, Energia injetada kWh do medidor. 0 se não houver\n- preco_unit: decimal, Preço unit com tributos da linha Consumo em kWh\n- cosip: decimal, CONTRIB SERV.ILUM.PÚBLICA\n- adicionais: decimal, soma de Adic. B. Amarela/Vermelha. 0 se não houver' }
-        ]
-      }]
-    })
-  });
-  const json = await resp.json();
-  const text = json.content?.map(b => b.type === "text" ? b.text : "").join("") || "";
-  const clean = text.replace(/```json|```/g,"").trim();
-  const parsed = JSON.parse(clean);
-  return {
-    mes: parsed.mes, ano: parsed.ano,
-    consumo_kwh: parsed.consumo_kwh || 0,
-    energia_injetada: parsed.energia_injetada || 0,
-    preco_unit: parsed.preco_unit || 0,
-    cosip: parsed.cosip || 0,
-    adicionais: parsed.adicionais || 0
-  };
+  try {
+    const resp = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: "claude-sonnet-4-20250514",
+        max_tokens: 1000,
+        messages: [{
+          role: "user",
+          content: [
+            { type: "document", source: { type: "base64", media_type: "application/pdf", data: base64Data } },
+            { type: "text", text: 'Extraia dados desta conta Energisa. Responda APENAS JSON puro sem markdown:\n{"mes":"março","ano":2026,"consumo_kwh":317,"energia_injetada":1575,"preco_unit":0.877990,"cosip":13.91,"adicionais":0}\n- mes: mês referência em minúsculo\n- ano: ano referência\n- consumo_kwh: inteiro, Energia ativa em kWh (Consumo kWh do medidor)\n- energia_injetada: inteiro, Energia injetada kWh do medidor. 0 se não houver\n- preco_unit: decimal, Preço unit com tributos da linha Consumo em kWh\n- cosip: decimal, CONTRIB SERV.ILUM.PÚBLICA\n- adicionais: decimal, soma de Adic. B. Amarela/Vermelha. 0 se não houver' }
+          ]
+        }]
+      })
+    });
+    if(!resp.ok) {
+      console.log("API retornou status:", resp.status);
+      return null;
+    }
+    const json = await resp.json();
+    if(json.error) {
+      console.log("API erro:", json.error);
+      return null;
+    }
+    const text = (json.content || []).map(b => b.type === "text" ? b.text : "").join("") || "";
+    if(!text) return null;
+    const clean = text.replace(/```json|```/g,"").trim();
+    if(!clean) return null;
+    const parsed = JSON.parse(clean);
+    return {
+      mes: parsed.mes || null, 
+      ano: parsed.ano || null,
+      consumo_kwh: parsed.consumo_kwh || 0,
+      energia_injetada: parsed.energia_injetada || 0,
+      preco_unit: parsed.preco_unit || 0,
+      cosip: parsed.cosip || 0,
+      adicionais: parsed.adicionais || 0
+    };
+  } catch(e) {
+    console.log("extractWithAI erro:", e);
+    return null;
+  }
 }
 
 function fillFromPDF(data) {
