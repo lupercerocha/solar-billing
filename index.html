@@ -320,61 +320,182 @@ async function handleFile(file) {
 
   try {
     const ab = await file.arrayBuffer();
-    const pdf = await pdfjsLib.getDocument({data:ab}).promise;
-    let fullText = "";
-    for(let i=1; i<=pdf.numPages; i++){
-      const page = await pdf.getPage(i);
-      const tc = await page.getTextContent();
-      fullText += tc.items.map(it=>it.str).join(" ") + "\n";
+    const base64 = arrayBufferToBase64(ab);
+    
+    // Tentar primeiro: PDF.js local
+    let data = null;
+    try {
+      if(window.pdfjsLib) {
+        const pdf = await pdfjsLib.getDocument({data: ab.slice(0)}).promise;
+        let allItems = [];
+        for(let i=1; i<=pdf.numPages; i++){
+          const page = await pdf.getPage(i);
+          const tc = await page.getTextContent();
+          allItems = allItems.concat(tc.items.map(it => it.str));
+        }
+        // Juntar de várias formas para maximizar chance de match
+        const text1 = allItems.join(" ");
+        const text2 = allItems.join("");
+        const text3 = allItems.filter(s => s.trim()).join(" ");
+        data = parseEnergisa(text1, text2, text3);
+      }
+    } catch(e) { console.log("PDF.js falhou:", e); }
+
+    // Se não extraiu dados suficientes, usar IA como fallback
+    if(!data || !data.consumo_kwh) {
+      console.log("Fallback para IA...");
+      showStatus("loading-ai","");
+      try {
+        data = await extractWithAI(base64);
+      } catch(e) {
+        console.log("IA falhou:", e);
+      }
     }
-    const data = parseEnergisa(fullText);
-    fillFromPDF(data);
+
+    if(data && data.consumo_kwh) {
+      fillFromPDF(data);
+    } else {
+      showStatus("error","Não consegui ler o PDF. Preencha manualmente.");
+    }
   } catch(err) {
     console.error(err);
-    showStatus("error","Erro ao ler PDF. Preencha manualmente.");
+    showStatus("error","Erro ao processar arquivo. Preencha manualmente.");
   }
   dz.classList.remove("loading");
 }
 
-function parseEnergisa(text) {
+function arrayBufferToBase64(buffer) {
+  let binary = '';
+  const bytes = new Uint8Array(buffer);
+  for(let i = 0; i < bytes.byteLength; i++) binary += String.fromCharCode(bytes[i]);
+  return btoa(binary);
+}
+
+// ─── Fallback: Anthropic API ───
+async function extractWithAI(base64Data) {
+  const resp = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      model: "claude-sonnet-4-20250514",
+      max_tokens: 1000,
+      messages: [{
+        role: "user",
+        content: [
+          { type: "document", source: { type: "base64", media_type: "application/pdf", data: base64Data } },
+          { type: "text", text: 'Extraia dados desta conta Energisa. Responda APENAS JSON puro sem markdown:\n{"mes":"março","ano":2026,"consumo_kwh":317,"energia_injetada":1575,"preco_unit":0.877990,"cosip":13.91,"adicionais":0}\n- mes: mês referência em minúsculo\n- ano: ano referência\n- consumo_kwh: inteiro, Energia ativa em kWh (Consumo kWh do medidor)\n- energia_injetada: inteiro, Energia injetada kWh do medidor. 0 se não houver\n- preco_unit: decimal, Preço unit com tributos da linha Consumo em kWh\n- cosip: decimal, CONTRIB SERV.ILUM.PÚBLICA\n- adicionais: decimal, soma de Adic. B. Amarela/Vermelha. 0 se não houver' }
+        ]
+      }]
+    })
+  });
+  const json = await resp.json();
+  const text = json.content?.map(b => b.type === "text" ? b.text : "").join("") || "";
+  const clean = text.replace(/```json|```/g,"").trim();
+  const parsed = JSON.parse(clean);
+  return {
+    mes: parsed.mes, ano: parsed.ano,
+    consumo_kwh: parsed.consumo_kwh || 0,
+    energia_injetada: parsed.energia_injetada || 0,
+    preco_unit: parsed.preco_unit || 0,
+    cosip: parsed.cosip || 0,
+    adicionais: parsed.adicionais || 0
+  };
+}
+
+// ─── Local PDF parsing (multiple text join strategies) ───
+function parseEnergisa(text1, text2, text3) {
   const r = { mes:null, ano:null, consumo_kwh:0, energia_injetada:0, preco_unit:0, cosip:0, adicionais:0 };
+  
+  // Normalizar espaços em todas as versões
+  const texts = [text1, text2, text3].map(t => t.replace(/\s+/g, " "));
+  const allText = texts.join(" ||| ");
 
-  // Month/Year — look for "Mês / Ano" pattern
-  const mRef = text.match(/(Janeiro|Fevereiro|Março|Marco|Abril|Maio|Junho|Julho|Agosto|Setembro|Outubro|Novembro|Dezembro)\s*\/?\s*(20\d{2})/i);
-  if(mRef) { r.mes = mRef[1].toLowerCase(); r.ano = parseInt(mRef[2]); }
-
-  // Consumo kWh — from medidor table "Energia ativa em kWh Ponta XXXX XXXX 1 NNN"
-  const cMatch = text.match(/Energia\s+ativa\s+em\s+kWh\s+Ponta\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)/i);
-  if(cMatch) r.consumo_kwh = parseInt(cMatch[4]);
-
-  // Energia Injetada — "Energia injetada Ponta XXXX XXXX 1 NNN"
-  const iMatch = text.match(/Energia\s+injetada\s+Ponta\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)/i);
-  if(iMatch) r.energia_injetada = parseInt(iMatch[4]);
-
-  // Preço unit com tributos — "Consumo em kWh" followed by numbers, find pattern X,XXXXXX or 0,XXXXXX
-  // Look for "Consumo em kWh" then the price with tributos (format: 0,877990)
-  const pMatch = text.match(/Consumo\s+em\s+kWh\s+(?:KWH\s+)?[\d.,]+\s+([\d,]+)\s+([\d.,]+)/i);
-  if(pMatch) {
-    // The preço unit com tributos is typically the second number after quantity
-    r.preco_unit = parseBR(pMatch[1]);
-    if(r.preco_unit > 5) r.preco_unit = parseBR(pMatch[2]); // fallback
-  }
-  // More robust: look for 0,8XXXXX or 0,9XXXXX pattern near "Consumo em kWh"
-  const pMatch2 = text.match(/Consumo\s+em\s+kWh[\s\S]{0,80}?(0[,.][\d]{5,6})/i);
-  if(pMatch2 && !r.preco_unit) r.preco_unit = parseBR(pMatch2[1]);
-  // Even more robust - look for the pattern in items table
-  if(!r.preco_unit || r.preco_unit < 0.1) {
-    const pMatch3 = text.match(/(\d+[,.]\d{4,6})\s+[\d.,]+\s+[\d.,]+\s+[\d.,]+\s+20/);
-    if(pMatch3) r.preco_unit = parseBR(pMatch3[1]);
+  // ─── Mês/Ano ───
+  for(const t of texts) {
+    const m = t.match(/(Janeiro|Fevereiro|Mar[çc]o|Abril|Maio|Junho|Julho|Agosto|Setembro|Outubro|Novembro|Dezembro)\s*[\/\s]\s*(20\d{2})/i);
+    if(m) { r.mes = m[1].toLowerCase(); r.ano = parseInt(m[2]); break; }
   }
 
-  // COSIP — "CONTRIB SERV" + value
-  const cosipMatch = text.match(/CONTRIB\s+SERV[\w.\s]*?(\d+[,.]\d{2})\b/i);
-  if(cosipMatch) r.cosip = parseBR(cosipMatch[1]);
+  // ─── Consumo kWh (Energia ativa) ───
+  // Padrão: "Energia ativa em kWh" ... "Ponta" ... leitura_ant leitura_atual const consumo
+  for(const t of texts) {
+    // Tentar padrão completo
+    let m = t.match(/Energia\s*ativa\s*em\s*kWh[\s\S]{0,30}?Ponta\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)/i);
+    if(m) { r.consumo_kwh = parseInt(m[4]); break; }
+    // Padrão relaxado: qualquer 4 números após "ativa" e "Ponta"
+    m = t.match(/ativa[\s\S]{0,40}?Ponta[\s\S]{0,20}?(\d{2,5})\s+(\d{2,5})\s+(\d{1,2})\s+(\d{2,5})/i);
+    if(m) { r.consumo_kwh = parseInt(m[4]); break; }
+  }
+  // Fallback: procurar "Consumo kWh" seguido de número na tabela do medidor
+  if(!r.consumo_kwh) {
+    for(const t of texts) {
+      const m = t.match(/Consumo\s*kWh[\s:]*(\d{2,5})/i);
+      if(m) { r.consumo_kwh = parseInt(m[1]); break; }
+    }
+  }
+  // Fallback: procurar padrão "NNN,00" ou "NNN.00" após "Consumo em kWh KWH"
+  if(!r.consumo_kwh) {
+    for(const t of texts) {
+      const m = t.match(/Consumo\s*em\s*kWh[\s\S]{0,20}?KWH[\s\S]{0,10}?(\d{2,5})[,.]00/i);
+      if(m) { r.consumo_kwh = parseInt(m[1]); break; }
+    }
+  }
 
-  // Bandeira — "Adic. B." or "Adic B" + value  
-  const bandMatch = text.match(/Adic[\w.]*\s+B[\w.]*\s+[\w]*\s*([\d,]+)/i);
-  if(bandMatch) r.adicionais = parseBR(bandMatch[1]);
+  // ─── Energia Injetada ───
+  for(const t of texts) {
+    let m = t.match(/Energia\s*injetada[\s\S]{0,30}?Ponta\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)/i);
+    if(m) { r.energia_injetada = parseInt(m[4]); break; }
+    m = t.match(/injetada[\s\S]{0,40}?Ponta[\s\S]{0,20}?(\d{2,6})\s+(\d{2,6})\s+(\d{1,2})\s+(\d{2,5})/i);
+    if(m) { r.energia_injetada = parseInt(m[4]); break; }
+  }
+  // Fallback INJ Ponta
+  if(!r.energia_injetada) {
+    for(const t of texts) {
+      const m = t.match(/INJ\s*Ponta[\s\S]{0,30}?(\d{2,6})\s+(\d{2,6})\s+\d\s*[,.]?\s*0{0,2}\s+(\d{2,5})/i);
+      if(m) { r.energia_injetada = parseInt(m[3]); break; }
+    }
+  }
+
+  // ─── Preço unitário com tributos ───
+  // Padrão: número com 6 casas decimais (0,877990 / 0,902460 etc)
+  for(const t of texts) {
+    // Procurar próximo a "Consumo em kWh"
+    const chunk = t.match(/Consumo\s*em\s*kWh[\s\S]{0,120}/i);
+    if(chunk) {
+      // Procurar padrão 0,XXXXXX (6 casas)
+      const prices = chunk[0].match(/0[,.]\d{5,6}/g);
+      if(prices && prices.length) {
+        r.preco_unit = parseBR(prices[0]);
+        break;
+      }
+    }
+  }
+  // Fallback: procurar qualquer 0,8XXXXX ou 0,9XXXXX no texto
+  if(!r.preco_unit) {
+    for(const t of texts) {
+      const m = t.match(/0[,.][89]\d{4,5}/);
+      if(m) { r.preco_unit = parseBR(m[0]); break; }
+    }
+  }
+
+  // ─── COSIP ───
+  for(const t of texts) {
+    const m = t.match(/CONTRIB[\s\S]{0,30}?ILUM[\s\S]{0,20}?(\d{1,3}[,.]\d{2})/i);
+    if(m) { r.cosip = parseBR(m[1]); break; }
+  }
+  // Fallback
+  if(!r.cosip) {
+    for(const t of texts) {
+      const m = t.match(/SERV[\s.]*ILUM[\s\S]{0,30}?(\d{1,3}[,.]\d{2})/i);
+      if(m) { r.cosip = parseBR(m[1]); break; }
+    }
+  }
+
+  // ─── Adicionais de Bandeira ───
+  for(const t of texts) {
+    const m = t.match(/Adic[\s\S]{0,15}?B[\s.]*(?:Amarela|Vermelha|Verde)[\s\S]{0,30}?(\d{1,3}[,.]\d{2})/i);
+    if(m) { r.adicionais = parseBR(m[1]); break; }
+  }
 
   return r;
 }
@@ -427,6 +548,9 @@ function showStatus(type, msg) {
   if(type === "loading") {
     el.className = "st-ok";
     el.innerHTML = '<div class="up-wrap"><div class="spin-sm"></div><span class="up-text">Lendo PDF...</span></div>';
+  } else if(type === "loading-ai") {
+    el.className = "st-ok";
+    el.innerHTML = '<div class="up-wrap"><div class="spin-sm"></div><span class="up-text">Lendo PDF com IA (pode levar alguns segundos)...</span></div>';
   } else if(type === "success") {
     el.className = "st-ok";
     el.textContent = "✓ " + msg;
