@@ -1,0 +1,639 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Solar Billing - Cultivve</title>
+<meta name="description" content="Sistema de cobrança de energia solar">
+<meta name="theme-color" content="#172334">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Solar Billing">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'><rect width='180' height='180' rx='36' fill='%23172334'/><circle cx='90' cy='80' r='24' fill='none' stroke='%233AA094' stroke-width='4.5'/><line x1='90' y1='44' x2='90' y2='52' stroke='%233AA094' stroke-width='4.5' stroke-linecap='round'/><line x1='90' y1='108' x2='90' y2='116' stroke='%233AA094' stroke-width='4.5' stroke-linecap='round'/><line x1='54' y1='80' x2='62' y2='80' stroke='%233AA094' stroke-width='4.5' stroke-linecap='round'/><line x1='118' y1='80' x2='126' y2='80' stroke='%233AA094' stroke-width='4.5' stroke-linecap='round'/><text x='90' y='156' text-anchor='middle' fill='%233AA094' font-family='sans-serif' font-weight='bold' font-size='20'>SOLAR</text></svg>">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--dark:#172334;--accent:#3AA094;--light:#F2F1F1;--white:#fff;--danger:#D9534F;--green:#4ECB71}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'DM Sans',sans-serif;background:var(--light);color:var(--dark);min-height:100vh;-webkit-font-smoothing:antialiased}
+input,select,button{font-family:inherit}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* Header */
+.header{background:var(--dark);position:sticky;top:0;z-index:100;box-shadow:0 2px 12px rgba(23,35,52,.15)}
+.header-inner{max-width:1000px;margin:0 auto;padding:14px 16px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px}
+.logo-area{display:flex;align-items:center;gap:10px}
+.logo-icon{background:var(--accent);color:#fff;border-radius:8px;width:38px;height:38px;display:flex;align-items:center;justify-content:center}
+.logo-title{color:var(--light);font-size:18px;font-weight:700;letter-spacing:-0.02em;line-height:1.1}
+.logo-sub{color:var(--accent);font-size:11px;font-weight:500;letter-spacing:0.08em;text-transform:uppercase}
+.tabs{display:flex;gap:4px;background:rgba(255,255,255,.06);border-radius:8px;padding:3px}
+.tab{background:transparent;border:none;color:rgba(242,241,241,.5);font-size:13px;font-weight:600;padding:8px 14px;border-radius:6px;cursor:pointer;display:flex;align-items:center;gap:4px;transition:all .2s}
+.tab.active{background:var(--accent);color:#fff}
+.badge{background:rgba(255,255,255,.2);color:#fff;font-size:10px;font-weight:700;padding:1px 6px;border-radius:10px;margin-left:4px}
+
+/* Content */
+.content{max-width:1000px;margin:0 auto;padding:20px 16px 40px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start}
+@media(max-width:768px){.grid{grid-template-columns:1fr}}
+
+/* Cards */
+.card{background:var(--white);border-radius:12px;padding:20px;box-shadow:0 1px 4px rgba(23,35,52,.06);border:1px solid rgba(23,35,52,.06)}
+.card-dark{background:var(--dark);border-radius:12px;padding:20px;color:var(--light)}
+.card-title{font-size:15px;font-weight:700;margin-bottom:16px;color:var(--dark);display:flex;align-items:center;gap:6px}
+.card-title-light{font-size:15px;font-weight:700;margin-bottom:16px;color:var(--accent)}
+
+/* Form */
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media(max-width:400px){.row2{grid-template-columns:1fr}}
+.field{margin-bottom:12px}
+.label{display:block;font-size:11px;font-weight:600;color:var(--dark);opacity:.55;margin-bottom:4px;text-transform:uppercase;letter-spacing:0.04em}
+.input,.sel{width:100%;padding:10px 12px;font-size:14px;border:1.5px solid rgba(23,35,52,.12);border-radius:8px;background:#FAFAFA;color:var(--dark);outline:none;transition:border-color .2s}
+.input.filled,.sel.filled{border-color:var(--accent);background:rgba(58,160,148,.04)}
+.input:focus,.sel:focus{border-color:var(--accent)}
+.divider{height:1px;background:rgba(23,35,52,.08);margin:16px 0 12px}
+.section{font-size:12px;font-weight:700;color:var(--accent);margin-bottom:12px;letter-spacing:0.02em}
+.hint{font-weight:400;color:rgba(23,35,52,.35);font-size:11px}
+.res-mini{display:flex;justify-content:space-between;align-items:center;background:rgba(58,160,148,.08);border-radius:8px;padding:10px 14px;margin-top:4px}
+.res-mini-l{font-size:12px;font-weight:600;color:var(--dark);opacity:.6}
+.res-mini-v{font-size:15px;font-weight:700;color:var(--accent)}
+
+/* Upload */
+.drop-zone{border:2px dashed rgba(58,160,148,.35);border-radius:10px;padding:24px 16px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;cursor:pointer;transition:all .2s;color:var(--accent);background:rgba(58,160,148,.03);min-height:80px}
+.drop-zone.hover{border-color:var(--accent);background:rgba(58,160,148,.1)}
+.drop-zone.loading{opacity:.6;pointer-events:none}
+.drop-txt{font-size:13px;font-weight:500;color:rgba(23,35,52,.45);text-align:center}
+.up-wrap{display:flex;align-items:center;gap:10px}
+.up-text{font-size:13px;font-weight:600;color:var(--accent)}
+.spin-sm{width:22px;height:22px;border:2.5px solid #e0e0e0;border-top:2.5px solid var(--accent);border-radius:50%;animation:spin .8s linear infinite}
+.st-ok{margin-top:10px;padding:8px 12px;border-radius:8px;background:rgba(58,160,148,.1);color:#2a7d73;font-size:12px;font-weight:600}
+.st-err{margin-top:10px;padding:8px 12px;border-radius:8px;background:rgba(217,83,79,.08);color:var(--danger);font-size:12px;font-weight:600}
+
+/* Summary */
+.sum-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px}
+.sum-item{padding:8px 0}
+.sum-label{font-size:10px;font-weight:600;color:rgba(242,241,241,.45);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:2px}
+.sum-val{font-size:16px;font-weight:700;color:var(--light)}
+.sum-val-acc{font-size:16px;font-weight:700;color:var(--accent)}
+.sum-val-grn{font-size:16px;font-weight:700;color:var(--green)}
+.tot-row{border-top:1px solid rgba(242,241,241,.1);padding-top:16px;display:flex;justify-content:space-between;align-items:center}
+.tot-label{font-size:11px;font-weight:700;letter-spacing:.1em;color:rgba(242,241,241,.5)}
+.tot-val{font-size:26px;font-weight:800;color:var(--accent);letter-spacing:-0.02em}
+
+/* Message */
+.msg-pre{background:#FAFAFA;border-radius:8px;padding:14px 16px;font-size:12px;line-height:1.7;color:var(--dark);white-space:pre-wrap;border:1px solid rgba(23,35,52,.06);max-height:220px;overflow-y:auto;margin-bottom:14px}
+
+/* Buttons */
+.btn-row{display:flex;gap:8px}
+.btn{flex:1;padding:11px 16px;font-size:13px;font-weight:700;border:none;border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;font-family:inherit;transition:all .2s}
+.btn-pri{background:var(--accent);color:#fff}
+.btn-pri:active{transform:scale(.97)}
+.btn-sec{background:transparent;color:var(--accent);border:1.5px solid var(--accent)}
+.btn-dis{background:#ddd;color:#aaa;cursor:not-allowed}
+.saved-note{margin-top:8px;font-size:11px;color:var(--accent);font-weight:500;text-align:center}
+
+/* History */
+.hist-wrap{max-width:640px;margin:0 auto}
+.empty{text-align:center;padding:40px 0;color:rgba(23,35,52,.35);font-size:14px}
+.hist-list{display:flex;flex-direction:column;gap:6px}
+.hist-item{border:1px solid rgba(23,35,52,.08);border-radius:10px;overflow:hidden}
+.hist-head{display:flex;justify-content:space-between;align-items:center;padding:14px 16px;cursor:pointer}
+.hist-left{display:flex;align-items:center;gap:12px}
+.hist-mon{font-size:14px;font-weight:700}
+.hist-cli{font-size:12px;color:rgba(23,35,52,.45);font-weight:500}
+.hist-right{display:flex;align-items:center;gap:8px}
+.hist-tot{font-size:16px;font-weight:800;color:var(--accent)}
+.hist-det{padding:0 16px 16px;border-top:1px solid rgba(23,35,52,.06)}
+.det-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;padding:14px 0}
+@media(max-width:500px){.det-grid{grid-template-columns:1fr 1fr}}
+.det-item{display:flex;flex-direction:column;gap:2px}
+.det-lab{font-size:10px;font-weight:600;color:rgba(23,35,52,.4);text-transform:uppercase;letter-spacing:0.04em}
+.det-val{font-size:13px;font-weight:700}
+.det-act{display:flex;gap:8px;align-items:center;padding-top:8px;flex-wrap:wrap}
+.btn-sm{padding:6px 14px;font-size:12px;font-weight:600;background:var(--accent);color:#fff;border:none;border-radius:6px;cursor:pointer;font-family:inherit}
+.btn-sm-d{padding:6px 14px;font-size:12px;font-weight:600;background:transparent;color:var(--danger);border:1px solid rgba(217,83,79,.3);border-radius:6px;cursor:pointer;display:flex;align-items:center;gap:4px;font-family:inherit}
+.btn-dng{padding:6px 12px;font-size:12px;font-weight:600;background:var(--danger);color:#fff;border:none;border-radius:6px;cursor:pointer;font-family:inherit}
+.btn-sm-g{padding:6px 12px;font-size:12px;font-weight:600;background:transparent;color:var(--dark);border:1px solid rgba(23,35,52,.15);border-radius:6px;cursor:pointer;font-family:inherit}
+.conf-row{display:flex;align-items:center;gap:6px}
+.conf-txt{font-size:12px;color:var(--danger);font-weight:600}
+.saved-at{font-size:10px;color:rgba(23,35,52,.3);margin-top:10px}
+.chevron{transition:transform .3s}
+.chevron.open{transform:rotate(180deg)}
+
+.footer{text-align:center;padding:20px;font-size:11px;color:rgba(23,35,52,.3);font-weight:500;letter-spacing:0.04em}
+
+.hidden{display:none}
+.loading-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;background:var(--light)}
+.spinner{width:40px;height:40px;border:3px solid #e0e0e0;border-top:3px solid var(--accent);border-radius:50%;animation:spin .8s linear infinite}
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<div class="header">
+  <div class="header-inner">
+    <div class="logo-area">
+      <div class="logo-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg></div>
+      <div><div class="logo-title">Solar Billing</div><div class="logo-sub">Cultivve Gestão</div></div>
+    </div>
+    <div class="tabs">
+      <button class="tab active" id="tabCalc" onclick="showView('calc')">Calculadora</button>
+      <button class="tab" id="tabHist" onclick="showView('history')">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l4 2"/></svg>
+        <span>Histórico</span>
+        <span class="badge" id="histBadge">0</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<div class="content">
+  <!-- CALC VIEW -->
+  <div id="viewCalc" class="grid">
+    <div style="display:flex;flex-direction:column;gap:16px">
+      <!-- Upload -->
+      <div class="card">
+        <div class="card-title"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg> Upload da Conta Energisa (Casa)</div>
+        <div class="drop-zone" id="dropZone">
+          <input type="file" id="fileInput" accept=".pdf" style="display:none">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          <span class="drop-txt" id="dropTxt">Arraste o PDF aqui ou clique para selecionar</span>
+        </div>
+        <div id="uploadStatus" class="hidden"></div>
+      </div>
+
+      <!-- Form -->
+      <div class="card">
+        <div class="card-title">Dados do Mês</div>
+        <div class="row2">
+          <div class="field"><label class="label">Mês</label>
+            <select class="sel" id="fMonth" onchange="calc()"></select></div>
+          <div class="field"><label class="label">Ano</label>
+            <select class="sel" id="fYear" onchange="calc()"></select></div>
+        </div>
+        <div class="field"><label class="label">Nome do Cliente</label>
+          <input class="input" id="fClient" value="Kennedy" oninput="calc()"></div>
+
+        <div class="divider"></div>
+        <div class="section">Dados do Inversor Solar <span class="hint">(preencher manualmente)</span></div>
+        <div class="row2">
+          <div class="field"><label class="label">Energia Produzida (kWh)</label>
+            <input class="input" type="number" id="fProduzida" placeholder="Ex: 1740" oninput="calc()"></div>
+          <div class="field"><label class="label">Energia Injetada (kWh)</label>
+            <input class="input" type="number" id="fInjetada" placeholder="Via PDF ou manual" oninput="calc()"></div>
+        </div>
+        <div class="res-mini"><span class="res-mini-l">Consumo Instantâneo</span><span class="res-mini-v" id="resInstant">0 kWh</span></div>
+
+        <div class="divider"></div>
+        <div class="section">Dados da Conta <span class="hint">(preenchido pelo PDF)</span></div>
+        <div class="field"><label class="label">Consumo kWh (da conta)</label>
+          <input class="input" type="number" id="fConsumo" placeholder="Via PDF ou manual" oninput="calc()"></div>
+
+        <div class="divider"></div>
+        <div class="section">Parâmetros de Cobrança <span class="hint">(preço calculado pelo PDF)</span></div>
+        <div class="row2">
+          <div class="field"><label class="label">Preço por kWh (R$)</label>
+            <input class="input" type="number" step="0.0001" id="fPreco" placeholder="Via PDF ou manual" oninput="calc()"></div>
+          <div class="field"><label class="label">Desconto (%)</label>
+            <input class="input" type="number" id="fDesconto" value="15" oninput="calc()"></div>
+        </div>
+
+        <div class="divider"></div>
+        <div class="section">Dados de Pagamento (PIX)</div>
+        <div class="row2">
+          <div class="field"><label class="label">Chave PIX</label>
+            <input class="input" id="fPixKey" value="093.370.024-50" oninput="calc()"></div>
+          <div class="field"><label class="label">Nome do Titular</label>
+            <input class="input" id="fPixName" value="Vitor Negrão Rocha" oninput="calc()"></div>
+        </div>
+        <div class="field"><label class="label">Data limite para PIX</label>
+          <input class="input" id="fPixDate" placeholder="Ex: 08/04/2026" oninput="calc()"></div>
+      </div>
+    </div>
+
+    <!-- Right -->
+    <div style="display:flex;flex-direction:column;gap:16px">
+      <div class="card-dark">
+        <div class="card-title-light" id="sumTitle">Resumo</div>
+        <div class="sum-grid">
+          <div class="sum-item"><div class="sum-label">Consumo Conta</div><div class="sum-val" id="sumConta">0 kWh</div></div>
+          <div class="sum-item"><div class="sum-label">Consumo Instant.</div><div class="sum-val" id="sumInst">0 kWh</div></div>
+          <div class="sum-item"><div class="sum-label">Consumo Total</div><div class="sum-val-acc" id="sumTotal">0 kWh</div></div>
+          <div class="sum-item"><div class="sum-label">Valor Bruto</div><div class="sum-val" id="sumBruto">R$ 0,00</div></div>
+          <div class="sum-item"><div class="sum-label" id="sumDescLabel">Desconto 15%</div><div class="sum-val-grn" id="sumDesc">- R$ 0,00</div></div>
+        </div>
+        <div class="tot-row"><div class="tot-label">TOTAL A PAGAR</div><div class="tot-val" id="sumFinal">R$ 0,00</div></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Mensagem WhatsApp</div>
+        <div class="msg-pre" id="msgPreview"></div>
+        <div class="btn-row">
+          <button class="btn btn-dis" id="btnCopy" onclick="copyMsg()" disabled>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
+            <span id="copyLabel">Copiar Mensagem</span>
+          </button>
+          <button class="btn btn-dis" id="btnSave" onclick="saveToHistory()" disabled>Salvar no Histórico</button>
+        </div>
+        <div class="saved-note hidden" id="savedNote">Campos limpos — pronto para o próximo mês.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- HISTORY VIEW -->
+  <div id="viewHistory" class="hidden">
+    <div class="hist-wrap">
+      <div class="card">
+        <div class="card-title">Histórico de Cobranças</div>
+        <div id="histContent"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="footer">Cultivve Gestão — Simplicidade, Eficácia e Resultado</div>
+
+<script>
+// ─── Config ───
+const MONTHS = ["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
+const MONTH_MAP = {janeiro:0,fevereiro:1,"março":2,marco:2,abril:3,maio:4,junho:5,julho:6,agosto:7,setembro:8,outubro:9,novembro:10,dezembro:11};
+const SK = "solar-billing-v4";
+
+let history = [];
+
+// ─── Init ───
+(function init() {
+  const selM = document.getElementById("fMonth");
+  MONTHS.forEach((m,i) => { const o = document.createElement("option"); o.value = i; o.textContent = m; selM.appendChild(o); });
+  selM.value = new Date().getMonth();
+
+  const selY = document.getElementById("fYear");
+  [2025,2026,2027,2028].forEach(y => { const o = document.createElement("option"); o.value = y; o.textContent = y; selY.appendChild(o); });
+  selY.value = 2026;
+
+  // Load history
+  try { history = JSON.parse(localStorage.getItem(SK) || "[]"); } catch { history = []; }
+  // Seed
+  const seeds = [
+    {id:"2026-02",month:2,year:2026,label:"Março/2026",produzida:1740,injetadaSolar:1575,consumoInstantaneo:165,consumoKwh:317,consumoTotal:482,preco:0.93,descontoPct:15,valorBruto:448.26,valorDesconto:67.24,valorFinal:381.02,clientName:"Kennedy",savedAt:"2026-03-30T12:00:00Z"},
+    {id:"2026-01",month:1,year:2026,label:"Fevereiro/2026",produzida:1678,injetadaSolar:1492,consumoInstantaneo:186,consumoKwh:309,consumoTotal:495,preco:0.93,descontoPct:15,valorBruto:460.35,valorDesconto:69.05,valorFinal:391.30,clientName:"Kennedy",savedAt:"2026-03-01T12:00:00Z"}
+  ];
+  const ids = new Set(history.map(h=>h.id));
+  seeds.filter(s=>!ids.has(s.id)).forEach(s=>history.push(s));
+  history.sort((a,b)=>b.id.localeCompare(a.id));
+  saveHist();
+
+  // Load settings
+  try {
+    const s = JSON.parse(localStorage.getItem(SK+"-set")||"{}");
+    if(s.clientName) document.getElementById("fClient").value = s.clientName;
+    if(s.pixKey) document.getElementById("fPixKey").value = s.pixKey;
+    if(s.pixName) document.getElementById("fPixName").value = s.pixName;
+    if(s.desconto) document.getElementById("fDesconto").value = s.desconto;
+  } catch {}
+
+  // Upload events
+  const dz = document.getElementById("dropZone");
+  const fi = document.getElementById("fileInput");
+  dz.addEventListener("click", () => fi.click());
+  dz.addEventListener("dragover", e => { e.preventDefault(); dz.classList.add("hover"); });
+  dz.addEventListener("dragleave", () => dz.classList.remove("hover"));
+  dz.addEventListener("drop", e => { e.preventDefault(); dz.classList.remove("hover"); handleFile(e.dataTransfer.files[0]); });
+  fi.addEventListener("change", e => { handleFile(e.target.files[0]); e.target.value = ""; });
+
+  // PDF.js worker
+  if(window.pdfjsLib) pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+
+  calc();
+  updateBadge();
+})();
+
+// ─── PDF Handling ───
+async function handleFile(file) {
+  if(!file || !file.name.toLowerCase().endsWith(".pdf")) {
+    showStatus("error","Envie um arquivo PDF."); return;
+  }
+  const dz = document.getElementById("dropZone");
+  dz.classList.add("loading");
+  document.getElementById("dropTxt").textContent = file.name;
+  showStatus("loading","");
+
+  try {
+    const ab = await file.arrayBuffer();
+    const pdf = await pdfjsLib.getDocument({data:ab}).promise;
+    let fullText = "";
+    for(let i=1; i<=pdf.numPages; i++){
+      const page = await pdf.getPage(i);
+      const tc = await page.getTextContent();
+      fullText += tc.items.map(it=>it.str).join(" ") + "\n";
+    }
+    const data = parseEnergisa(fullText);
+    fillFromPDF(data);
+  } catch(err) {
+    console.error(err);
+    showStatus("error","Erro ao ler PDF. Preencha manualmente.");
+  }
+  dz.classList.remove("loading");
+}
+
+function parseEnergisa(text) {
+  const r = { mes:null, ano:null, consumo_kwh:0, energia_injetada:0, preco_unit:0, cosip:0, adicionais:0 };
+
+  // Month/Year — look for "Mês / Ano" pattern
+  const mRef = text.match(/(Janeiro|Fevereiro|Março|Marco|Abril|Maio|Junho|Julho|Agosto|Setembro|Outubro|Novembro|Dezembro)\s*\/?\s*(20\d{2})/i);
+  if(mRef) { r.mes = mRef[1].toLowerCase(); r.ano = parseInt(mRef[2]); }
+
+  // Consumo kWh — from medidor table "Energia ativa em kWh Ponta XXXX XXXX 1 NNN"
+  const cMatch = text.match(/Energia\s+ativa\s+em\s+kWh\s+Ponta\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)/i);
+  if(cMatch) r.consumo_kwh = parseInt(cMatch[4]);
+
+  // Energia Injetada — "Energia injetada Ponta XXXX XXXX 1 NNN"
+  const iMatch = text.match(/Energia\s+injetada\s+Ponta\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)/i);
+  if(iMatch) r.energia_injetada = parseInt(iMatch[4]);
+
+  // Preço unit com tributos — "Consumo em kWh" followed by numbers, find pattern X,XXXXXX or 0,XXXXXX
+  // Look for "Consumo em kWh" then the price with tributos (format: 0,877990)
+  const pMatch = text.match(/Consumo\s+em\s+kWh\s+(?:KWH\s+)?[\d.,]+\s+([\d,]+)\s+([\d.,]+)/i);
+  if(pMatch) {
+    // The preço unit com tributos is typically the second number after quantity
+    r.preco_unit = parseBR(pMatch[1]);
+    if(r.preco_unit > 5) r.preco_unit = parseBR(pMatch[2]); // fallback
+  }
+  // More robust: look for 0,8XXXXX or 0,9XXXXX pattern near "Consumo em kWh"
+  const pMatch2 = text.match(/Consumo\s+em\s+kWh[\s\S]{0,80}?(0[,.][\d]{5,6})/i);
+  if(pMatch2 && !r.preco_unit) r.preco_unit = parseBR(pMatch2[1]);
+  // Even more robust - look for the pattern in items table
+  if(!r.preco_unit || r.preco_unit < 0.1) {
+    const pMatch3 = text.match(/(\d+[,.]\d{4,6})\s+[\d.,]+\s+[\d.,]+\s+[\d.,]+\s+20/);
+    if(pMatch3) r.preco_unit = parseBR(pMatch3[1]);
+  }
+
+  // COSIP — "CONTRIB SERV" + value
+  const cosipMatch = text.match(/CONTRIB\s+SERV[\w.\s]*?(\d+[,.]\d{2})\b/i);
+  if(cosipMatch) r.cosip = parseBR(cosipMatch[1]);
+
+  // Bandeira — "Adic. B." or "Adic B" + value  
+  const bandMatch = text.match(/Adic[\w.]*\s+B[\w.]*\s+[\w]*\s*([\d,]+)/i);
+  if(bandMatch) r.adicionais = parseBR(bandMatch[1]);
+
+  return r;
+}
+
+function parseBR(s) {
+  if(!s) return 0;
+  return parseFloat(String(s).replace(/\./g,"").replace(",",".")) || 0;
+}
+
+function fillFromPDF(data) {
+  const parts = [];
+  if(data.mes) {
+    const mi = MONTH_MAP[data.mes.normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase()] ?? MONTH_MAP[data.mes.toLowerCase()];
+    if(mi !== undefined) document.getElementById("fMonth").value = mi;
+  }
+  if(data.ano) document.getElementById("fYear").value = data.ano;
+
+  if(data.consumo_kwh) {
+    document.getElementById("fConsumo").value = data.consumo_kwh;
+    document.getElementById("fConsumo").classList.add("filled");
+    parts.push("Consumo: "+data.consumo_kwh+" kWh");
+  }
+  if(data.energia_injetada) {
+    document.getElementById("fInjetada").value = data.energia_injetada;
+    document.getElementById("fInjetada").classList.add("filled");
+    parts.push("Injetada: "+data.energia_injetada+" kWh");
+  }
+
+  // Calculate effective kWh price
+  if(data.consumo_kwh > 0 && data.preco_unit > 0) {
+    const totalSemSolar = (data.consumo_kwh * data.preco_unit) + data.cosip + data.adicionais;
+    const precoEfetivo = (totalSemSolar / data.consumo_kwh).toFixed(4);
+    document.getElementById("fPreco").value = precoEfetivo;
+    document.getElementById("fPreco").classList.add("filled");
+    parts.push("kWh: R$ "+parseFloat(precoEfetivo).toFixed(2));
+  }
+
+  if(parts.length) {
+    const ml = data.mes ? (data.mes.charAt(0).toUpperCase()+data.mes.slice(1)) : "";
+    showStatus("success", (ml && data.ano ? ml+"/"+data.ano+" — " : "") + parts.join(", "));
+  } else {
+    showStatus("error","Não encontrei dados no PDF. Preencha manualmente.");
+  }
+  calc();
+}
+
+function showStatus(type, msg) {
+  const el = document.getElementById("uploadStatus");
+  el.classList.remove("hidden","st-ok","st-err");
+  if(type === "loading") {
+    el.className = "st-ok";
+    el.innerHTML = '<div class="up-wrap"><div class="spin-sm"></div><span class="up-text">Lendo PDF...</span></div>';
+  } else if(type === "success") {
+    el.className = "st-ok";
+    el.textContent = "✓ " + msg;
+  } else {
+    el.className = "st-err";
+    el.textContent = "✗ " + msg;
+  }
+}
+
+// ─── Calculations ───
+function calc() {
+  const produzida = parseFloat(document.getElementById("fProduzida").value) || 0;
+  const injetada = parseFloat(document.getElementById("fInjetada").value) || 0;
+  const consumoInst = Math.max(0, produzida - injetada);
+  const consumoKwh = parseFloat(document.getElementById("fConsumo").value) || 0;
+  const consumoTotal = consumoKwh + consumoInst;
+  const preco = parseFloat(document.getElementById("fPreco").value) || 0;
+  const descPct = parseFloat(document.getElementById("fDesconto").value) || 0;
+  const bruto = consumoTotal * preco;
+  const desconto = bruto * (descPct / 100);
+  const final_ = bruto - desconto;
+
+  const mi = parseInt(document.getElementById("fMonth").value);
+  const yr = parseInt(document.getElementById("fYear").value);
+  const label = MONTHS[mi] + "/" + yr;
+
+  document.getElementById("resInstant").textContent = fmtI(consumoInst) + " kWh";
+  document.getElementById("sumTitle").textContent = "Resumo — " + label;
+  document.getElementById("sumConta").textContent = fmtI(consumoKwh) + " kWh";
+  document.getElementById("sumInst").textContent = fmtI(consumoInst) + " kWh";
+  document.getElementById("sumTotal").textContent = fmtI(consumoTotal) + " kWh";
+  document.getElementById("sumBruto").textContent = "R$ " + fmt(bruto);
+  document.getElementById("sumDescLabel").textContent = "Desconto " + fmtI(descPct) + "%";
+  document.getElementById("sumDesc").textContent = "- R$ " + fmt(desconto);
+  document.getElementById("sumFinal").textContent = "R$ " + fmt(final_);
+
+  // WhatsApp message
+  const client = document.getElementById("fClient").value || "Kennedy";
+  const pixKey = document.getElementById("fPixKey").value;
+  const pixName = document.getElementById("fPixName").value;
+  const pixDate = document.getElementById("fPixDate").value;
+
+  const msg = `Olá, ${client},
+O consumo de energia no período foi de ${fmtI(consumoTotal)} kWh.
+Valor do kWh: R$ ${fmt(preco)}
+Total bruto: R$ ${fmt(bruto)}
+Desconto de ${fmtI(descPct)}%: R$ ${fmt(desconto)}
+*Valor final a pagar: R$ ${fmt(final_)}*
+
+PIX - ${pixKey}
+${pixName}
+Data para Pix até - ${pixDate}`;
+
+  document.getElementById("msgPreview").textContent = msg;
+
+  const valid = produzida > 0 && consumoKwh > 0;
+  const btnC = document.getElementById("btnCopy");
+  const btnS = document.getElementById("btnSave");
+  btnC.disabled = !valid; btnC.className = "btn " + (valid ? "btn-pri" : "btn-dis");
+  btnS.disabled = !valid; btnS.className = "btn " + (valid ? "btn-sec" : "btn-dis");
+
+  // Save settings
+  try {
+    localStorage.setItem(SK+"-set", JSON.stringify({clientName:client, pixKey, pixName, desconto:descPct}));
+  } catch {}
+}
+
+function fmt(v) { return v.toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2}); }
+function fmtI(v) { return v.toLocaleString("pt-BR",{maximumFractionDigits:0}); }
+
+// ─── Copy ───
+function copyMsg() {
+  const msg = document.getElementById("msgPreview").textContent;
+  navigator.clipboard.writeText(msg).catch(() => {
+    const ta = document.createElement("textarea"); ta.value = msg;
+    document.body.appendChild(ta); ta.select(); document.execCommand("copy"); document.body.removeChild(ta);
+  });
+  document.getElementById("copyLabel").textContent = "Copiado!";
+  setTimeout(() => { document.getElementById("copyLabel").textContent = "Copiar Mensagem"; }, 2000);
+}
+
+// ─── Save ───
+function saveToHistory() {
+  const mi = parseInt(document.getElementById("fMonth").value);
+  const yr = parseInt(document.getElementById("fYear").value);
+  const produzida = parseFloat(document.getElementById("fProduzida").value) || 0;
+  const injetada = parseFloat(document.getElementById("fInjetada").value) || 0;
+  const consumoInst = Math.max(0, produzida - injetada);
+  const consumoKwh = parseFloat(document.getElementById("fConsumo").value) || 0;
+  const consumoTotal = consumoKwh + consumoInst;
+  const preco = parseFloat(document.getElementById("fPreco").value) || 0;
+  const descPct = parseFloat(document.getElementById("fDesconto").value) || 0;
+  const bruto = consumoTotal * preco;
+  const desconto = bruto * (descPct / 100);
+  const final_ = bruto - desconto;
+
+  const entry = {
+    id: yr+"-"+String(mi).padStart(2,"0"),
+    month:mi, year:yr, label:MONTHS[mi]+"/"+yr,
+    produzida, injetadaSolar:injetada, consumoInstantaneo:consumoInst,
+    consumoKwh, consumoTotal, preco, descontoPct:descPct,
+    valorBruto: Math.round(bruto*100)/100,
+    valorDesconto: Math.round(desconto*100)/100,
+    valorFinal: Math.round(final_*100)/100,
+    clientName: document.getElementById("fClient").value,
+    pixKey: document.getElementById("fPixKey").value,
+    pixName: document.getElementById("fPixName").value,
+    dataPix: document.getElementById("fPixDate").value,
+    savedAt: new Date().toISOString()
+  };
+
+  const idx = history.findIndex(h => h.id === entry.id);
+  if(idx >= 0) history[idx] = entry; else history.push(entry);
+  history.sort((a,b) => b.id.localeCompare(a.id));
+  saveHist();
+  updateBadge();
+
+  // Clear variable fields
+  ["fProduzida","fInjetada","fConsumo","fPreco"].forEach(id => {
+    const el = document.getElementById(id);
+    el.value = ""; el.classList.remove("filled");
+  });
+  document.getElementById("dropTxt").textContent = "Arraste o PDF aqui ou clique para selecionar";
+  document.getElementById("uploadStatus").classList.add("hidden");
+
+  const note = document.getElementById("savedNote");
+  note.classList.remove("hidden");
+  document.getElementById("btnSave").textContent = "Salvo ✓";
+  setTimeout(() => {
+    note.classList.add("hidden");
+    document.getElementById("btnSave").textContent = "Salvar no Histórico";
+  }, 2500);
+
+  calc();
+}
+
+function saveHist() { try { localStorage.setItem(SK, JSON.stringify(history)); } catch {} }
+function updateBadge() { document.getElementById("histBadge").textContent = history.length; }
+
+// ─── Views ───
+function showView(v) {
+  document.getElementById("viewCalc").classList.toggle("hidden", v !== "calc");
+  document.getElementById("viewHistory").classList.toggle("hidden", v !== "history");
+  document.getElementById("tabCalc").classList.toggle("active", v === "calc");
+  document.getElementById("tabHist").classList.toggle("active", v === "history");
+  if(v === "history") renderHistory();
+}
+
+function renderHistory() {
+  const c = document.getElementById("histContent");
+  if(!history.length) { c.innerHTML = '<div class="empty">Nenhuma cobrança salva.</div>'; return; }
+  c.innerHTML = '<div class="hist-list">' + history.map(item => `
+    <div class="hist-item" id="hi-${item.id}">
+      <div class="hist-head" onclick="toggleDetail('${item.id}')">
+        <div class="hist-left"><div class="hist-mon">${item.label}</div><div class="hist-cli">${item.clientName||""}</div></div>
+        <div class="hist-right"><div class="hist-tot">R$ ${fmt(item.valorFinal)}</div>
+          <svg class="chevron" id="chev-${item.id}" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+        </div>
+      </div>
+      <div class="hist-det hidden" id="det-${item.id}">
+        <div class="det-grid">
+          ${[["Produzida",fmtI(item.produzida)+" kWh"],["Injetada",fmtI(item.injetadaSolar)+" kWh"],["C. Instant.",fmtI(item.consumoInstantaneo)+" kWh"],["C. Conta",fmtI(item.consumoKwh)+" kWh"],["C. Total",fmtI(item.consumoTotal)+" kWh"],["Preço kWh","R$ "+fmt(item.preco)],["V. Bruto","R$ "+fmt(item.valorBruto)],["Desconto",fmtI(item.descontoPct)+"% (R$ "+fmt(item.valorDesconto)+")"]].map(([l,v])=>`<div class="det-item"><span class="det-lab">${l}</span><span class="det-val">${v}</span></div>`).join("")}
+        </div>
+        <div class="det-act">
+          <button class="btn-sm" onclick="loadEntry('${item.id}')">Recarregar</button>
+          <button class="btn-sm-d" id="delbtn-${item.id}" onclick="confirmDel('${item.id}')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg> Excluir</button>
+        </div>
+        <div class="saved-at">Salvo em ${new Date(item.savedAt).toLocaleDateString("pt-BR")} às ${new Date(item.savedAt).toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"})}</div>
+      </div>
+    </div>
+  `).join("") + '</div>';
+}
+
+function toggleDetail(id) {
+  const det = document.getElementById("det-"+id);
+  const chev = document.getElementById("chev-"+id);
+  det.classList.toggle("hidden");
+  chev.classList.toggle("open");
+}
+
+function confirmDel(id) {
+  const btn = document.getElementById("delbtn-"+id);
+  btn.outerHTML = `<div class="conf-row"><span class="conf-txt">Confirmar?</span><button class="btn-dng" onclick="delEntry('${id}')">Sim</button><button class="btn-sm-g" onclick="renderHistory()">Não</button></div>`;
+}
+
+function delEntry(id) {
+  history = history.filter(h => h.id !== id);
+  saveHist(); updateBadge(); renderHistory();
+}
+
+function loadEntry(id) {
+  const item = history.find(h => h.id === id);
+  if(!item) return;
+  document.getElementById("fMonth").value = item.month;
+  document.getElementById("fYear").value = item.year;
+  document.getElementById("fProduzida").value = item.produzida;
+  document.getElementById("fInjetada").value = item.injetadaSolar;
+  document.getElementById("fConsumo").value = item.consumoKwh;
+  document.getElementById("fPreco").value = item.preco;
+  document.getElementById("fDesconto").value = item.descontoPct;
+  document.getElementById("fClient").value = item.clientName || "Kennedy";
+  document.getElementById("fPixKey").value = item.pixKey || "093.370.024-50";
+  document.getElementById("fPixName").value = item.pixName || "Vitor Negrão Rocha";
+  document.getElementById("fPixDate").value = item.dataPix || "";
+  showView("calc");
+  calc();
+}
+</script>
+</body>
+</html>

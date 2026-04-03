@@ -1,0 +1,17 @@
+{
+  "name": "Solar Billing - Cultivve",
+  "short_name": "Solar Billing",
+  "description": "Sistema de cobrança de energia solar",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#172334",
+  "theme_color": "#172334",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><rect width='192' height='192' rx='32' fill='%23172334'/><circle cx='96' cy='86' r='28' fill='none' stroke='%233AA094' stroke-width='5'/><line x1='96' y1='46' x2='96' y2='56' stroke='%233AA094' stroke-width='5' stroke-linecap='round'/><line x1='96' y1='116' x2='96' y2='126' stroke='%233AA094' stroke-width='5' stroke-linecap='round'/><line x1='56' y1='86' x2='66' y2='86' stroke='%233AA094' stroke-width='5' stroke-linecap='round'/><line x1='126' y1='86' x2='136' y2='86' stroke='%233AA094' stroke-width='5' stroke-linecap='round'/><text x='96' y='168' text-anchor='middle' fill='%233AA094' font-family='sans-serif' font-weight='bold' font-size='22'>SOLAR</text></svg>",
+      "sizes": "192x192",
+      "type": "image/svg+xml"
+    }
+  ]
+}
