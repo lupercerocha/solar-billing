@@ -10,6 +10,7 @@
 <meta name="apple-mobile-web-app-title" content="Solar Billing">
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'><rect width='180' height='180' rx='36' fill='%23172334'/><circle cx='90' cy='80' r='24' fill='none' stroke='%233AA094' stroke-width='4.5'/><text x='90' y='156' text-anchor='middle' fill='%233AA094' font-family='sans-serif' font-weight='bold' font-size='20'>SB</text></svg>">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <style>
 :root{--dk:#172334;--ac:#3AA094;--lt:#F2F1F1;--wh:#fff;--dn:#D9534F;--gn:#4ECB71}
 *{margin:0;padding:0;box-sizing:border-box}
@@ -216,19 +217,21 @@ let H=[];
   dz.ondragleave=()=>dz.classList.remove("hv");
   dz.ondrop=e=>{e.preventDefault();dz.classList.remove("hv");proc(e.dataTransfer.files[0])};
   fi.onchange=e=>{proc(e.target.files[0]);e.target.value=""};
+  if(window.pdfjsLib)pdfjsLib.GlobalWorkerOptions.workerSrc="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
   cc();ub();
 })();
 
-// ─── PDF via Anthropic API (funciona no Claude.ai) ───
+// ─── PDF Processing ───
 async function proc(file){
-  if(!file){return}
-  if(!file.name.toLowerCase().endsWith(".pdf")){sts("er","Envie um arquivo PDF.");return}
+  if(!file||!file.name.toLowerCase().endsWith(".pdf")){sts("er","Envie um arquivo PDF.");return}
   const dz=document.getElementById("dz");
   dz.classList.add("ld");
   document.getElementById("dt").textContent=file.name;
+  const ab=await file.arrayBuffer();
+
+  // 1) Tentar API Anthropic (funciona no Claude.ai)
   sts("ld","Lendo PDF com IA...");
   try{
-    const ab=await file.arrayBuffer();
     const bytes=new Uint8Array(ab);
     let bin="";for(let i=0;i<bytes.length;i++)bin+=String.fromCharCode(bytes[i]);
     const b64=btoa(bin);
@@ -241,32 +244,152 @@ async function proc(file){
         ]}]
       })
     });
-    if(!resp.ok)throw new Error("API status "+resp.status);
+    if(!resp.ok)throw new Error("s"+resp.status);
     const json=await resp.json();
-    if(json.error)throw new Error(json.error.message||"API error");
+    if(json.error)throw new Error("e");
     const txt=(json.content||[]).filter(b=>b.type==="text").map(b=>b.text).join("");
-    if(!txt)throw new Error("Resposta vazia");
+    if(!txt)throw new Error("v");
     const d=JSON.parse(txt.replace(/```json|```/g,"").trim());
-    // Fill
-    if(d.mes){const k=d.mes.normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase();const mi=MM[k]??MM[d.mes];if(mi!==undefined)document.getElementById("fM").value=mi}
-    if(d.ano)document.getElementById("fY").value=d.ano;
-    const parts=[];
-    if(d.consumo_kwh){document.getElementById("fK").value=d.consumo_kwh;document.getElementById("fK").classList.add("ok");parts.push("Consumo: "+d.consumo_kwh+" kWh")}
-    if(d.energia_injetada){document.getElementById("fI").value=d.energia_injetada;document.getElementById("fI").classList.add("ok");parts.push("Injetada: "+d.energia_injetada+" kWh")}
-    if(d.consumo_kwh>0&&d.preco_unit>0){
-      const tot=(d.consumo_kwh*d.preco_unit)+(d.cosip||0)+(d.adicionais||0);
-      const pe=(tot/d.consumo_kwh).toFixed(4);
-      document.getElementById("fR").value=pe;document.getElementById("fR").classList.add("ok");
-      parts.push("kWh: R$ "+parseFloat(pe).toFixed(2));
+    fillAI(d);
+    dz.classList.remove("ld");
+    return;
+  }catch(e){console.log("API indisponível, tentando local...",e)}
+
+  // 2) Fallback: PDF.js local
+  sts("ld","Lendo PDF localmente...");
+  try{
+    if(!window.pdfjsLib)throw new Error("no pdfjs");
+    const pdf=await pdfjsLib.getDocument({data:ab.slice(0)}).promise;
+    let items=[];
+    for(let p=1;p<=pdf.numPages;p++){
+      const pg=await pdf.getPage(p);
+      const tc=await pg.getTextContent();
+      tc.items.forEach(it=>{if(it.str&&it.str.trim())items.push({t:it.str.trim(),y:Math.round(it.transform[5]),x:Math.round(it.transform[4]),p})});
     }
-    const ml=d.mes?(d.mes.charAt(0).toUpperCase()+d.mes.slice(1)):"";
-    sts("ok",(ml&&d.ano?ml+"/"+d.ano+" — ":"")+parts.join(", "));
-    cc();
-  }catch(e){
-    console.log("PDF erro:",e);
-    sts("er","Leitura automática indisponível neste ambiente. Preencha os campos manualmente.");
+    // Agrupar em linhas por Y (tolerância 5px)
+    items.sort((a,b)=>a.p-b.p||b.y-a.y||a.x-b.x);
+    const rows=[];let cur=[],ly=null,lp=null;
+    items.forEach(it=>{
+      if(lp!==null&&(it.p!==lp||Math.abs(it.y-ly)>5)){if(cur.length)rows.push(cur.sort((a,b)=>a.x-b.x));cur=[]}
+      cur.push(it);ly=it.y;lp=it.p;
+    });
+    if(cur.length)rows.push(cur.sort((a,b)=>a.x-b.x));
+    const rts=rows.map(r=>r.map(i=>i.t).join(" "));
+
+    const d={mes:null,ano:null,kwh:0,inj:0,pu:0,cosip:0,adic:0};
+
+    // Mês/Ano
+    for(const r of rts){const m=r.match(/(Janeiro|Fevereiro|Mar[çc]o|Abril|Maio|Junho|Julho|Agosto|Setembro|Outubro|Novembro|Dezembro)\s*[\/\s]+\s*(20\d{2})/i);if(m){d.mes=m[1].toLowerCase();d.ano=parseInt(m[2]);break}}
+
+    // Consumo kWh — linha com "Energia ativa" + "Ponta", pegar números, filtrar anos
+    for(const r of rts){
+      if(/energia\s*ativa/i.test(r)&&/ponta/i.test(r)){
+        const nums=(r.match(/\b(\d{2,5})\b/g)||[]).map(Number).filter(n=>n>=10&&(n<1990||n>2030));
+        if(nums.length>=2){
+          // Padrão: leit_ant, leit_atual, (const=1 já filtrado se <10), consumo
+          // O consumo é o menor dos últimos números (menor que leituras)
+          d.kwh=Math.min(...nums.slice(-2));
+          if(d.kwh>5000)d.kwh=nums[nums.length-1]; // safety
+        }else if(nums.length===1){d.kwh=nums[0]}
+        break;
+      }
+    }
+
+    // Energia Injetada — mesma lógica
+    for(const r of rts){
+      if(/energia\s*injetada/i.test(r)&&/ponta/i.test(r)){
+        const nums=(r.match(/\b(\d{2,5})\b/g)||[]).map(Number).filter(n=>n>=10&&(n<1990||n>2030));
+        if(nums.length>=2){d.inj=Math.min(...nums.slice(-2));if(d.inj>50000)d.inj=nums[nums.length-1]}
+        else if(nums.length===1){d.inj=nums[0]}
+        break;
+      }
+    }
+
+    // Preço unitário — linha "Consumo em kWh", buscar 0,XXXXXX
+    for(const r of rts){
+      if(/consumo\s*em\s*kwh/i.test(r)){
+        const ps=(r.match(/\d[,.]\d{5,6}/g)||[]).map(s=>parseFloat(s.replace(",",".")));
+        const valid=ps.filter(v=>v>0.1&&v<3);
+        if(valid.length)d.pu=valid[0];
+        break;
+      }
+    }
+
+    // COSIP
+    for(const r of rts){
+      if(/contrib/i.test(r)&&(/ilum/i.test(r)||/p[úu]blica/i.test(r))){
+        const ns=(r.match(/\d{1,3}[,.]\d{2}/g)||[]).map(s=>parseFloat(s.replace(",",".")));
+        const valid=ns.filter(v=>v>=1&&v<100);
+        if(valid.length)d.cosip=valid[0];
+        break;
+      }
+    }
+
+    // Bandeira
+    for(const r of rts){
+      if(/adic/i.test(r)&&/b[.\s]*(amarela|vermelha|verde)/i.test(r)){
+        const ns=(r.match(/\d{1,3}[,.]\d{2}/g)||[]).map(s=>parseFloat(s.replace(",",".")));
+        const valid=ns.filter(v=>v>0&&v<50);
+        if(valid.length)d.adic=valid[0];
+        break;
+      }
+    }
+
+    if(d.kwh>0){
+      fillLocal(d);
+    }else{
+      sts("er","Não encontrei o consumo no PDF. Preencha manualmente.");
+    }
+  }catch(e2){
+    console.log("PDF.js erro:",e2);
+    sts("er","Erro ao ler PDF. Preencha manualmente.");
   }
   dz.classList.remove("ld");
+}
+
+function pixDate(month, year){
+  // month é 0-indexed (0=Jan). PIX = dia 8 do mês seguinte
+  let m=month+2, y=year;
+  if(m>12){m=1;y++}
+  return "08/"+String(m).padStart(2,"0")+"/"+y;
+}
+
+function fillAI(d){
+  const parts=[];
+  let mi=null;
+  if(d.mes){const k=d.mes.normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase();mi=MM[k]??MM[d.mes];if(mi!==undefined)document.getElementById("fM").value=mi}
+  if(d.ano)document.getElementById("fY").value=d.ano;
+  if(d.consumo_kwh){document.getElementById("fK").value=d.consumo_kwh;document.getElementById("fK").classList.add("ok");parts.push("Consumo: "+d.consumo_kwh+" kWh")}
+  if(d.energia_injetada){document.getElementById("fI").value=d.energia_injetada;document.getElementById("fI").classList.add("ok");parts.push("Injetada: "+d.energia_injetada+" kWh")}
+  if(d.consumo_kwh>0&&d.preco_unit>0){
+    const tot=(d.consumo_kwh*d.preco_unit)+(d.cosip||0)+(d.adicionais||0);
+    const pe=(tot/d.consumo_kwh).toFixed(4);
+    document.getElementById("fR").value=pe;document.getElementById("fR").classList.add("ok");
+    parts.push("kWh: R$ "+parseFloat(pe).toFixed(2));
+  }
+  if(mi!==null&&d.ano){document.getElementById("fPD").value=pixDate(mi,d.ano);document.getElementById("fPD").classList.add("ok")}
+  const ml=d.mes?(d.mes.charAt(0).toUpperCase()+d.mes.slice(1)):"";
+  sts("ok",(ml&&d.ano?ml+"/"+d.ano+" — ":"")+parts.join(", "));
+  cc();
+}
+
+function fillLocal(d){
+  const parts=[];
+  let mi=null;
+  if(d.mes){const k=d.mes.normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase();mi=MM[k]??MM[d.mes];if(mi!==undefined)document.getElementById("fM").value=mi}
+  if(d.ano)document.getElementById("fY").value=d.ano;
+  if(d.kwh){document.getElementById("fK").value=d.kwh;document.getElementById("fK").classList.add("ok");parts.push("Consumo: "+d.kwh+" kWh")}
+  if(d.inj){document.getElementById("fI").value=d.inj;document.getElementById("fI").classList.add("ok");parts.push("Injetada: "+d.inj+" kWh")}
+  if(d.kwh>0&&d.pu>0){
+    const tot=(d.kwh*d.pu)+d.cosip+d.adic;
+    const pe=(tot/d.kwh).toFixed(4);
+    document.getElementById("fR").value=pe;document.getElementById("fR").classList.add("ok");
+    parts.push("kWh: R$ "+parseFloat(pe).toFixed(2));
+  }
+  if(mi!==null&&d.ano){document.getElementById("fPD").value=pixDate(mi,d.ano);document.getElementById("fPD").classList.add("ok")}
+  const ml=d.mes?(d.mes.charAt(0).toUpperCase()+d.mes.slice(1)):"";
+  sts("ok",(ml&&d.ano?ml+"/"+d.ano+" — ":"")+parts.join(", "));
+  cc();
 }
 
 function sts(t,m){
@@ -331,7 +454,7 @@ function sv(){
   const i=H.findIndex(h=>h.id===e.id);
   if(i>=0)H[i]=e;else H.push(e);
   H.sort((a,b)=>b.id.localeCompare(a.id));lsH();ub();
-  ["fP","fI","fK","fR"].forEach(id=>{const el=document.getElementById(id);el.value="";el.classList.remove("ok")});
+  ["fP","fI","fK","fR","fPD"].forEach(id=>{const el=document.getElementById(id);el.value="";el.classList.remove("ok")});
   document.getElementById("dt").textContent="Toque aqui para selecionar o PDF";
   document.getElementById("us").classList.add("hid");
   const n=document.getElementById("svn");n.classList.remove("hid");
