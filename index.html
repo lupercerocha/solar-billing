@@ -9,11 +9,11 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Solar Billing">
 <link rel="manifest" href="manifest.json">
-<link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'><rect width='180' height='180' rx='36' fill='%23172334'/><circle cx='90' cy='80' r='24' fill='none' stroke='%233AA094' stroke-width='4.5'/><text x='90' y='156' text-anchor='middle' fill='%233AA094' font-family='sans-serif' font-weight='bold' font-size='20'>SOLAR</text></svg>">
+<link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'><rect width='180' height='180' rx='36' fill='%23172334'/><circle cx='90' cy='80' r='24' fill='none' stroke='%233AA094' stroke-width='4.5'/><text x='90' y='156' text-anchor='middle' fill='%233AA094' font-family='sans-serif' font-weight='bold' font-size='20'>SB</text></svg>">
 <style>
 :root{--dk:#172334;--ac:#3AA094;--lt:#F2F1F1;--wh:#fff;--dn:#D9534F;--gn:#4ECB71}
 *{margin:0;padding:0;box-sizing:border-box}
-body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--lt);color:var(--dk);min-height:100vh;-webkit-font-smoothing:antialiased}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--lt);color:var(--dk);min-height:100vh;-webkit-font-smoothing:antialiased}
 input,select,button{font-family:inherit;font-size:14px}
 @keyframes spin{to{transform:rotate(360deg)}}
 .hd{background:var(--dk);position:sticky;top:0;z-index:100;box-shadow:0 2px 12px rgba(23,35,52,.15)}
@@ -46,7 +46,6 @@ input,select,button{font-family:inherit;font-size:14px}
 .rm{display:flex;justify-content:space-between;align-items:center;background:rgba(58,160,148,.08);border-radius:8px;padding:9px 12px;margin-top:4px}
 .rm span:first-child{font-size:11px;font-weight:600;opacity:.6}
 .rm span:last-child{font-size:14px;font-weight:700;color:var(--ac)}
-/* Upload */
 .dz{border:2px dashed rgba(58,160,148,.35);border-radius:10px;padding:20px 14px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;cursor:pointer;transition:all .2s;color:var(--ac);background:rgba(58,160,148,.03);min-height:70px}
 .dz.hv{border-color:var(--ac);background:rgba(58,160,148,.1)}
 .dz.ld{opacity:.6;pointer-events:none}
@@ -56,7 +55,6 @@ input,select,button{font-family:inherit;font-size:14px}
 .sp{width:20px;height:20px;border:2.5px solid #e0e0e0;border-top:2.5px solid var(--ac);border-radius:50%;animation:spin .8s linear infinite}
 .st-ok{margin-top:8px;padding:7px 10px;border-radius:8px;background:rgba(58,160,148,.1);color:#2a7d73;font-size:11px;font-weight:600}
 .st-er{margin-top:8px;padding:7px 10px;border-radius:8px;background:rgba(217,83,79,.08);color:var(--dn);font-size:11px;font-weight:600}
-/* Summary */
 .sg{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
 .si{padding:6px 0}
 .sl2{font-size:9px;font-weight:600;color:rgba(242,241,241,.4);text-transform:uppercase;letter-spacing:.06em;margin-bottom:2px}
@@ -69,19 +67,17 @@ input,select,button{font-family:inherit;font-size:14px}
 .mp{background:#FAFAFA;border-radius:8px;padding:12px 14px;font-size:11px;line-height:1.7;white-space:pre-wrap;border:1px solid rgba(23,35,52,.06);max-height:200px;overflow-y:auto;margin-bottom:12px}
 .br{display:flex;gap:8px}
 .bt{flex:1;padding:10px 14px;font-size:13px;font-weight:700;border:none;border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:5px;font-family:inherit;transition:all .15s}
-.bt-p{background:var(--ac);color:#fff}
-.bt-p:active{transform:scale(.97)}
+.bt-p{background:var(--ac);color:#fff}.bt-p:active{transform:scale(.97)}
 .bt-s{background:transparent;color:var(--ac);border:1.5px solid var(--ac)}
 .bt-d{background:#ddd;color:#aaa;cursor:not-allowed}
 .sn{margin-top:7px;font-size:10px;color:var(--ac);font-weight:500;text-align:center}
-/* History */
 .hw{max-width:600px;margin:0 auto}
 .em{text-align:center;padding:36px 0;color:rgba(23,35,52,.3);font-size:13px}
 .hl{display:flex;flex-direction:column;gap:5px}
 .hi{border:1px solid rgba(23,35,52,.08);border-radius:10px;overflow:hidden}
 .hh{display:flex;justify-content:space-between;align-items:center;padding:12px 14px;cursor:pointer}
 .hm{font-size:13px;font-weight:700}
-.hc{font-size:11px;color:rgba(23,35,52,.4);font-weight:500;margin-left:10px}
+.hc2{font-size:11px;color:rgba(23,35,52,.4);font-weight:500;margin-left:10px}
 .ht{font-size:15px;font-weight:800;color:var(--ac);margin-right:6px}
 .hd2{padding:0 14px 14px;border-top:1px solid rgba(23,35,52,.06)}
 .dg{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px;padding:12px 0}
@@ -97,8 +93,7 @@ input,select,button{font-family:inherit;font-size:14px}
 .cr{display:flex;align-items:center;gap:5px}
 .ct2{font-size:11px;color:var(--dn);font-weight:600}
 .sa{font-size:9px;color:rgba(23,35,52,.25);margin-top:8px}
-.chv{transition:transform .3s;display:inline-block}
-.chv.op{transform:rotate(180deg)}
+.chv{transition:transform .3s;display:inline-block}.chv.op{transform:rotate(180deg)}
 .ft{text-align:center;padding:16px;font-size:10px;color:rgba(23,35,52,.25);font-weight:500;letter-spacing:.04em}
 .hid{display:none}
 </style>
@@ -116,7 +111,6 @@ input,select,button{font-family:inherit;font-size:14px}
 </div></div>
 
 <div class="ct">
-<!-- CALC -->
 <div id="vc" class="gr">
   <div style="display:flex;flex-direction:column;gap:14px">
     <!-- Upload -->
@@ -141,16 +135,16 @@ input,select,button{font-family:inherit;font-size:14px}
       <div class="sc">Dados do Inversor Solar <span class="hn">(manual)</span></div>
       <div class="r2">
         <div class="f"><label class="lb">Energia Produzida (kWh)</label><input class="ip" type="number" id="fP" placeholder="Ex: 1740" oninput="cc()"></div>
-        <div class="f"><label class="lb">Energia Injetada (kWh)</label><input class="ip" type="number" id="fI" placeholder="PDF ou manual" oninput="cc()"></div>
+        <div class="f"><label class="lb">Energia Injetada (kWh)</label><input class="ip" type="number" id="fI" placeholder="Da conta ou manual" oninput="cc()"></div>
       </div>
       <div class="rm"><span>Consumo Instantâneo</span><span id="ri">0 kWh</span></div>
       <div class="dv"></div>
-      <div class="sc">Dados da Conta <span class="hn">(PDF ou manual)</span></div>
-      <div class="f"><label class="lb">Consumo kWh</label><input class="ip" type="number" id="fK" placeholder="PDF ou manual" oninput="cc()"></div>
+      <div class="sc">Dados da Conta</div>
+      <div class="f"><label class="lb">Consumo kWh</label><input class="ip" type="number" id="fK" placeholder="Ex: 317" oninput="cc()"></div>
       <div class="dv"></div>
-      <div class="sc">Parâmetros de Cobrança <span class="hn">(PDF ou manual)</span></div>
+      <div class="sc">Parâmetros de Cobrança</div>
       <div class="r2">
-        <div class="f"><label class="lb">Preço por kWh (R$)</label><input class="ip" type="number" step="0.0001" id="fR" placeholder="PDF ou manual" oninput="cc()"></div>
+        <div class="f"><label class="lb">Preço por kWh (R$)</label><input class="ip" type="number" step="0.0001" id="fR" placeholder="Ex: 0.9219" oninput="cc()"></div>
         <div class="f"><label class="lb">Desconto (%)</label><input class="ip" type="number" id="fD" value="15" oninput="cc()"></div>
       </div>
       <div class="dv"></div>
@@ -162,7 +156,6 @@ input,select,button{font-family:inherit;font-size:14px}
       <div class="f"><label class="lb">Data limite PIX</label><input class="ip" id="fPD" placeholder="Ex: 08/04/2026" oninput="cc()"></div>
     </div>
   </div>
-  <!-- Right -->
   <div style="display:flex;flex-direction:column;gap:14px">
     <div class="cd-dk">
       <div class="cd-t-lt" id="st">Resumo</div>
@@ -186,19 +179,16 @@ input,select,button{font-family:inherit;font-size:14px}
     </div>
   </div>
 </div>
-<!-- HIST -->
 <div id="vh" class="hid"><div class="hw"><div class="cd"><div class="cd-t">Histórico de Cobranças</div><div id="hc"></div></div></div></div>
 </div>
 <div class="ft">Cultivve Gestão — Simplicidade, Eficácia e Resultado</div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script>
 const MS=["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
 const MM={janeiro:0,fevereiro:1,"março":2,marco:2,abril:3,maio:4,junho:5,julho:6,agosto:7,setembro:8,outubro:9,novembro:10,dezembro:11};
-const SK="sb-v5";
+const SK="sb-v6";
 let H=[];
 
-// Init
 (function(){
   const m=document.getElementById("fM");
   MS.forEach((n,i)=>{const o=document.createElement("option");o.value=i;o.textContent=n;m.appendChild(o)});
@@ -213,224 +203,85 @@ let H=[];
   ];
   const ids=new Set(H.map(h=>h.id));
   sd.filter(s=>!ids.has(s.id)).forEach(s=>H.push(s));
-  H.sort((a,b)=>b.id.localeCompare(a.id));
-  lsH();
+  H.sort((a,b)=>b.id.localeCompare(a.id));lsH();
   try{const s=JSON.parse(localStorage.getItem(SK+"-s")||"{}");
     if(s.cli)document.getElementById("fC").value=s.cli;
     if(s.pk)document.getElementById("fPK").value=s.pk;
     if(s.pn)document.getElementById("fPN").value=s.pn;
     if(s.d)document.getElementById("fD").value=s.d;
   }catch{}
-  
-  // PDF.js
-  if(window.pdfjsLib)pdfjsLib.GlobalWorkerOptions.workerSrc="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
-  
-  // Upload
   const dz=document.getElementById("dz"),fi=document.getElementById("fi");
   dz.onclick=()=>fi.click();
   dz.ondragover=e=>{e.preventDefault();dz.classList.add("hv")};
   dz.ondragleave=()=>dz.classList.remove("hv");
   dz.ondrop=e=>{e.preventDefault();dz.classList.remove("hv");proc(e.dataTransfer.files[0])};
   fi.onchange=e=>{proc(e.target.files[0]);e.target.value=""};
-  
   cc();ub();
 })();
 
-// ─── PDF Processing with position-based extraction ───
+// ─── PDF via Anthropic API (funciona no Claude.ai) ───
 async function proc(file){
-  if(!file){sts("er","Selecione um arquivo.");return}
-  const name=file.name.toLowerCase();
-  if(!name.endsWith(".pdf")){sts("er","Envie um arquivo PDF.");return}
+  if(!file){return}
+  if(!file.name.toLowerCase().endsWith(".pdf")){sts("er","Envie um arquivo PDF.");return}
   const dz=document.getElementById("dz");
   dz.classList.add("ld");
   document.getElementById("dt").textContent=file.name;
-  sts("ld","");
-  
+  sts("ld","Lendo PDF com IA...");
   try{
     const ab=await file.arrayBuffer();
-    if(!window.pdfjsLib){sts("er","Biblioteca PDF não carregou. Recarregue a página.");dz.classList.remove("ld");return}
-    
-    const pdf=await pdfjsLib.getDocument({data:ab}).promise;
-    
-    // Extract ALL text items with positions from all pages
-    let items=[];
-    for(let p=1;p<=pdf.numPages;p++){
-      const page=await pdf.getPage(p);
-      const tc=await page.getTextContent();
-      tc.items.forEach(it=>{
-        if(it.str && it.str.trim()){
-          items.push({
-            t:it.str.trim(),
-            x:Math.round(it.transform[4]),
-            y:Math.round(it.transform[5]),
-            p:p
-          });
-        }
-      });
-    }
-    
-    // Group into rows (items within 4px Y tolerance)
-    items.sort((a,b)=>a.p-b.p||b.y-a.y||a.x-b.x);
-    let rows=[];
-    let curRow=[];
-    let lastY=null,lastP=null;
-    items.forEach(it=>{
-      if(lastP!==null&&(it.p!==lastP||Math.abs(it.y-lastY)>4)){
-        if(curRow.length)rows.push(curRow.sort((a,b)=>a.x-b.x));
-        curRow=[];
-      }
-      curRow.push(it);
-      lastY=it.y;lastP=it.p;
+    const bytes=new Uint8Array(ab);
+    let bin="";for(let i=0;i<bytes.length;i++)bin+=String.fromCharCode(bytes[i]);
+    const b64=btoa(bin);
+    const resp=await fetch("https://api.anthropic.com/v1/messages",{
+      method:"POST",headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:1000,
+        messages:[{role:"user",content:[
+          {type:"document",source:{type:"base64",media_type:"application/pdf",data:b64}},
+          {type:"text",text:'Extraia dados desta conta de energia Energisa. Responda APENAS com JSON puro, sem markdown, sem backticks:\n{"mes":"março","ano":2026,"consumo_kwh":317,"energia_injetada":1575,"preco_unit":0.877990,"cosip":13.91,"adicionais":0}\n\nINSTRUÇÕES IMPORTANTES:\n- mes: mês de referência da conta em minúsculo (campo REF MÊS/ANO)\n- ano: ano de referência\n- consumo_kwh: Vá até a TABELA DO MEDIDOR (parte inferior da página 1, com colunas Medidor/Grandezas/Postos horários/Leitura Anterior/Leitura Atual/Const Medidor/Consumo kWh). Na linha "Energia ativa em kWh", pegue o valor da ÚLTIMA coluna "Consumo kWh". ATENÇÃO: NÃO confunda com o ano 1997 que aparece em "Art. 13 RICMS/PB - 1997". O consumo é um número tipicamente entre 50 e 1000.\n- energia_injetada: Na mesma tabela do medidor, linha "Energia injetada", coluna "Consumo kWh". Se não existir essa linha, coloque 0.\n- preco_unit: Na tabela "Itens da Fatura" (meio da página), linha "Consumo em kWh", coluna "Preço unit (R$) com tributos". É um número decimal com 6 casas como 0,877990.\n- cosip: Valor da linha "CONTRIB SERV.ILUM.PÚBLICA" na coluna Valor (R$).\n- adicionais: Soma dos valores de "Adic. B. Amarela" ou "Adic. B. Vermelha" se existirem. Se não houver, coloque 0.'}
+        ]}]
+      })
     });
-    if(curRow.length)rows.push(curRow.sort((a,b)=>a.x-b.x));
-    
-    // Build row texts
-    const rowTexts=rows.map(r=>r.map(i=>i.t).join(" "));
-    
-    // Debug: log all rows
-    console.log("=== PDF ROWS ===");
-    rowTexts.forEach((r,i)=>console.log(i+":",r));
-    
-    // ─── Extract data ───
-    const d={mes:null,ano:null,kwh:0,inj:0,pu:0,cosip:0,adic:0};
-    
-    // 1. Mês/Ano - procurar linha com mês + ano (ex: "Março / 2026" ou "Março/2026")
-    for(const rt of rowTexts){
-      const m=rt.match(/(Janeiro|Fevereiro|Mar[çc]o|Abril|Maio|Junho|Julho|Agosto|Setembro|Outubro|Novembro|Dezembro)\s*[\/\s]+\s*(20\d{2})/i);
-      if(m){d.mes=m[1].toLowerCase();d.ano=parseInt(m[2]);break}
+    if(!resp.ok)throw new Error("API status "+resp.status);
+    const json=await resp.json();
+    if(json.error)throw new Error(json.error.message||"API error");
+    const txt=(json.content||[]).filter(b=>b.type==="text").map(b=>b.text).join("");
+    if(!txt)throw new Error("Resposta vazia");
+    const d=JSON.parse(txt.replace(/```json|```/g,"").trim());
+    // Fill
+    if(d.mes){const k=d.mes.normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase();const mi=MM[k]??MM[d.mes];if(mi!==undefined)document.getElementById("fM").value=mi}
+    if(d.ano)document.getElementById("fY").value=d.ano;
+    const parts=[];
+    if(d.consumo_kwh){document.getElementById("fK").value=d.consumo_kwh;document.getElementById("fK").classList.add("ok");parts.push("Consumo: "+d.consumo_kwh+" kWh")}
+    if(d.energia_injetada){document.getElementById("fI").value=d.energia_injetada;document.getElementById("fI").classList.add("ok");parts.push("Injetada: "+d.energia_injetada+" kWh")}
+    if(d.consumo_kwh>0&&d.preco_unit>0){
+      const tot=(d.consumo_kwh*d.preco_unit)+(d.cosip||0)+(d.adicionais||0);
+      const pe=(tot/d.consumo_kwh).toFixed(4);
+      document.getElementById("fR").value=pe;document.getElementById("fR").classList.add("ok");
+      parts.push("kWh: R$ "+parseFloat(pe).toFixed(2));
     }
-    
-    // 2. Consumo kWh - procurar linha que contém "Energia ativa em kWh" ou "ativa" + "Ponta"
-    //    O último número inteiro >= 50 nessa linha é o consumo
-    for(const rt of rowTexts){
-      if(/energia\s*ativa/i.test(rt)&&/ponta/i.test(rt)){
-        const nums=rt.match(/\b(\d{2,5})\b/g);
-        if(nums&&nums.length>=2){
-          // Último número é consumo (Consumo kWh), penúltimo é const medidor (1)
-          // Pegar o último número que NÃO seja 1
-          for(let i=nums.length-1;i>=0;i--){
-            const n=parseInt(nums[i]);
-            if(n>=10&&n<10000){d.kwh=n;break}
-          }
-        }
-        break;
-      }
-    }
-    
-    // 3. Energia Injetada - mesma lógica para "Energia injetada" ou "injetada"
-    for(const rt of rowTexts){
-      if(/energia\s*injetada/i.test(rt)&&/ponta/i.test(rt)){
-        const nums=rt.match(/\b(\d{2,5})\b/g);
-        if(nums&&nums.length>=2){
-          for(let i=nums.length-1;i>=0;i--){
-            const n=parseInt(nums[i]);
-            if(n>=10&&n<100000){d.inj=n;break}
-          }
-        }
-        break;
-      }
-    }
-    
-    // 4. Preço unitário com tributos - linha com "Consumo em kWh", buscar 0,8XXXXX ou 0,9XXXXX
-    for(const rt of rowTexts){
-      if(/consumo\s*em\s*kwh/i.test(rt)){
-        // Procurar número com 6 casas decimais (formato 0,877990)
-        const prices=rt.match(/\d[,.]\d{5,6}/g);
-        if(prices){
-          for(const p of prices){
-            const v=pbr(p);
-            if(v>0.1&&v<3){d.pu=v;break}
-          }
-        }
-        break;
-      }
-    }
-    
-    // 5. COSIP - linha com "CONTRIB" e "ILUM" ou "PÚBLICA"
-    for(const rt of rowTexts){
-      if(/contrib/i.test(rt)&&(/ilum/i.test(rt)||/p[úu]blica/i.test(rt))){
-        const nums=rt.match(/\d{1,3}[,.]\d{2}/g);
-        if(nums){
-          for(const n of nums){
-            const v=pbr(n);
-            if(v>=1&&v<100){d.cosip=v;break}
-          }
-        }
-        break;
-      }
-    }
-    
-    // 6. Bandeira tarifária
-    for(const rt of rowTexts){
-      if(/adic/i.test(rt)&&/b[.]*\s*(amarela|vermelha|verde)/i.test(rt)){
-        const nums=rt.match(/\d{1,3}[,.]\d{2}/g);
-        if(nums){
-          for(const n of nums){
-            const v=pbr(n);
-            if(v>0&&v<50){d.adic=v;break}
-          }
-        }
-        break;
-      }
-    }
-    
-    // Fill form
-    fill(d);
-  }catch(err){
-    console.error("Erro PDF:",err);
-    sts("er","Erro ao ler PDF: "+err.message);
+    const ml=d.mes?(d.mes.charAt(0).toUpperCase()+d.mes.slice(1)):"";
+    sts("ok",(ml&&d.ano?ml+"/"+d.ano+" — ":"")+parts.join(", "));
+    cc();
+  }catch(e){
+    console.log("PDF erro:",e);
+    sts("er","Leitura automática indisponível neste ambiente. Preencha os campos manualmente.");
   }
   dz.classList.remove("ld");
 }
 
-function pbr(s){if(!s)return 0;return parseFloat(String(s).replace(/\./g,"").replace(",","."))||0}
-
-function fill(d){
-  const parts=[];
-  if(d.mes){
-    const k=d.mes.normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase();
-    const mi=MM[k]??MM[d.mes.toLowerCase()];
-    if(mi!==undefined)document.getElementById("fM").value=mi;
-  }
-  if(d.ano)document.getElementById("fY").value=d.ano;
-  if(d.kwh){
-    const el=document.getElementById("fK");el.value=d.kwh;el.classList.add("ok");
-    parts.push("Consumo: "+d.kwh+" kWh");
-  }
-  if(d.inj){
-    const el=document.getElementById("fI");el.value=d.inj;el.classList.add("ok");
-    parts.push("Injetada: "+d.inj+" kWh");
-  }
-  if(d.kwh>0&&d.pu>0){
-    const tot=(d.kwh*d.pu)+d.cosip+d.adic;
-    const pe=(tot/d.kwh).toFixed(4);
-    const el=document.getElementById("fR");el.value=pe;el.classList.add("ok");
-    parts.push("kWh: R$ "+parseFloat(pe).toFixed(2));
-  }
-  if(parts.length){
-    const ml=d.mes?(d.mes.charAt(0).toUpperCase()+d.mes.slice(1)):"";
-    sts("ok",(ml&&d.ano?ml+"/"+d.ano+" — ":"")+parts.join(", "));
-  }else{
-    sts("er","Não encontrei dados. Preencha manualmente.");
-  }
-  cc();
-}
-
 function sts(t,m){
   const el=document.getElementById("us");el.classList.remove("hid","st-ok","st-er");
-  if(t==="ld"){el.className="st-ok";el.innerHTML='<div class="uw"><div class="sp"></div><span class="ut">Lendo PDF...</span></div>'}
+  if(t==="ld"){el.className="st-ok";el.innerHTML='<div class="uw"><div class="sp"></div><span class="ut">'+m+'</span></div>'}
   else if(t==="ok"){el.className="st-ok";el.textContent="✓ "+m}
   else{el.className="st-er";el.textContent="✗ "+m}
 }
 
-// ─── Calculations ───
 function cc(){
   const pr=pf("fP"),ij=pf("fI"),ci=Math.max(0,pr-ij),kw=pf("fK"),ct=kw+ci;
   const rc=pf("fR"),dp=pf("fD"),br=ct*rc,ds=br*(dp/100),fn=br-ds;
   const mi=parseInt(document.getElementById("fM").value),yr=parseInt(document.getElementById("fY").value);
-  const lb=MS[mi]+"/"+yr;
   document.getElementById("ri").textContent=fi2(ci)+" kWh";
-  document.getElementById("st").textContent="Resumo — "+lb;
+  document.getElementById("st").textContent="Resumo — "+MS[mi]+"/"+yr;
   document.getElementById("s1").textContent=fi2(kw)+" kWh";
   document.getElementById("s2").textContent=fi2(ci)+" kWh";
   document.getElementById("s3").textContent=fi2(ct)+" kWh";
@@ -452,9 +303,8 @@ PIX - ${pk}
 ${pn}
 Data para Pix até - ${pd}`;
   const ok=pr>0&&kw>0;
-  const bc=document.getElementById("bc"),bv=document.getElementById("bv");
-  bc.disabled=!ok;bc.className="bt "+(ok?"bt-p":"bt-d");
-  bv.disabled=!ok;bv.className="bt "+(ok?"bt-s":"bt-d");
+  document.getElementById("bc").disabled=!ok;document.getElementById("bc").className="bt "+(ok?"bt-p":"bt-d");
+  document.getElementById("bv").disabled=!ok;document.getElementById("bv").className="bt "+(ok?"bt-s":"bt-d");
   try{localStorage.setItem(SK+"-s",JSON.stringify({cli:c,pk,pn,d:dp}))}catch{}
 }
 function pf(id){return parseFloat(document.getElementById(id).value)||0}
@@ -463,11 +313,11 @@ function fi2(v){return v.toLocaleString("pt-BR",{maximumFractionDigits:0})}
 
 function cp(){
   const m=document.getElementById("mg").textContent;
-  if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(m).catch(()=>cpFb(m))}else{cpFb(m)}
+  if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(m).catch(()=>cpF(m))}else{cpF(m)}
   document.getElementById("bc").textContent="✓ Copiado!";
   setTimeout(()=>{document.getElementById("bc").innerHTML="📋 Copiar"},2000);
 }
-function cpFb(m){const t=document.createElement("textarea");t.value=m;t.style.position="fixed";t.style.opacity="0";document.body.appendChild(t);t.focus();t.select();document.execCommand("copy");document.body.removeChild(t)}
+function cpF(m){const t=document.createElement("textarea");t.value=m;t.style.position="fixed";t.style.opacity="0";document.body.appendChild(t);t.focus();t.select();document.execCommand("copy");document.body.removeChild(t)}
 
 function sv(){
   const mi=parseInt(document.getElementById("fM").value),yr=parseInt(document.getElementById("fY").value);
@@ -477,12 +327,10 @@ function sv(){
     produzida:pr,inj:ij,inst:ci,kwh:kw,total:ct,preco:rc,desc:dp,
     bruto:Math.round(br*100)/100,descV:Math.round(ds*100)/100,final:Math.round(fn*100)/100,
     cli:document.getElementById("fC").value,pk:document.getElementById("fPK").value,
-    pn:document.getElementById("fPN").value,pd:document.getElementById("fPD").value,
-    at:new Date().toISOString()};
+    pn:document.getElementById("fPN").value,pd:document.getElementById("fPD").value,at:new Date().toISOString()};
   const i=H.findIndex(h=>h.id===e.id);
   if(i>=0)H[i]=e;else H.push(e);
-  H.sort((a,b)=>b.id.localeCompare(a.id));
-  lsH();ub();
+  H.sort((a,b)=>b.id.localeCompare(a.id));lsH();ub();
   ["fP","fI","fK","fR"].forEach(id=>{const el=document.getElementById(id);el.value="";el.classList.remove("ok")});
   document.getElementById("dt").textContent="Toque aqui para selecionar o PDF";
   document.getElementById("us").classList.add("hid");
@@ -491,7 +339,6 @@ function sv(){
   setTimeout(()=>{n.classList.add("hid");document.getElementById("bv").textContent="Salvar"},2500);
   cc();
 }
-
 function lsH(){try{localStorage.setItem(SK,JSON.stringify(H))}catch{}}
 function ub(){document.getElementById("hb").textContent=H.length}
 
@@ -502,29 +349,22 @@ function vw(v){
   document.getElementById("t2").classList.toggle("on",v==="h");
   if(v==="h")rh();
 }
-
 function rh(){
   const c=document.getElementById("hc");
   if(!H.length){c.innerHTML='<div class="em">Nenhuma cobrança salva.</div>';return}
   c.innerHTML='<div class="hl">'+H.map(h=>`
     <div class="hi"><div class="hh" onclick="td('${h.id}')">
-      <div><span class="hm">${h.label}</span><span class="hc">${h.cli||""}</span></div>
+      <div><span class="hm">${h.label}</span><span class="hc2">${h.cli||""}</span></div>
       <div style="display:flex;align-items:center"><span class="ht">R$ ${fm(h.final)}</span><span class="chv" id="cv-${h.id}">▾</span></div>
     </div>
     <div class="hd2 hid" id="d-${h.id}">
-      <div class="dg">${[["Produzida",fi2(h.produzida)+" kWh"],["Injetada",fi2(h.inj)+" kWh"],["C.Instant.",fi2(h.inst)+" kWh"],["C.Conta",fi2(h.kwh)+" kWh"],["C.Total",fi2(h.total)+" kWh"],["R$/kWh",fm(h.preco)],["Bruto","R$ "+fm(h.bruto)],["Desc.",fi2(h.desc)+"% (R$ "+fm(h.descV)+")"]].map(([l,v])=>'<div class="di"><span class="dl">'+l+'</span><span class="dv2">'+v+'</span></div>').join("")}</div>
+      <div class="dg">${[["Produzida",fi2(h.produzida)+" kWh"],["Injetada",fi2(h.inj)+" kWh"],["C.Inst.",fi2(h.inst)+" kWh"],["C.Conta",fi2(h.kwh)+" kWh"],["C.Total",fi2(h.total)+" kWh"],["R$/kWh",fm(h.preco)],["Bruto","R$ "+fm(h.bruto)],["Desc.",fi2(h.desc)+"% (R$"+fm(h.descV)+")"]].map(([l,v])=>'<div class="di"><span class="dl">'+l+'</span><span class="dv2">'+v+'</span></div>').join("")}</div>
       <div class="da"><button class="bs" onclick="le('${h.id}')">Recarregar</button><button class="bsd" id="db-${h.id}" onclick="cd2('${h.id}')">🗑 Excluir</button></div>
       <div class="sa">Salvo em ${new Date(h.at).toLocaleDateString("pt-BR")} ${new Date(h.at).toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"})}</div>
     </div></div>`).join("")+'</div>';
 }
-
-function td(id){
-  const d=document.getElementById("d-"+id),cv=document.getElementById("cv-"+id);
-  d.classList.toggle("hid");cv.classList.toggle("op");
-}
-function cd2(id){
-  document.getElementById("db-"+id).outerHTML=`<div class="cr"><span class="ct2">Confirmar?</span><button class="bdn" onclick="de('${id}')">Sim</button><button class="bsg" onclick="rh()">Não</button></div>`;
-}
+function td(id){document.getElementById("d-"+id).classList.toggle("hid");document.getElementById("cv-"+id).classList.toggle("op")}
+function cd2(id){document.getElementById("db-"+id).outerHTML=`<div class="cr"><span class="ct2">Confirmar?</span><button class="bdn" onclick="de('${id}')">Sim</button><button class="bsg" onclick="rh()">Não</button></div>`}
 function de(id){H=H.filter(h=>h.id!==id);lsH();ub();rh()}
 function le(id){
   const h=H.find(x=>x.id===id);if(!h)return;
@@ -534,8 +374,7 @@ function le(id){
   document.getElementById("fD").value=h.desc;document.getElementById("fC").value=h.cli||"Kennedy";
   document.getElementById("fPK").value=h.pk||"093.370.024-50";
   document.getElementById("fPN").value=h.pn||"Vitor Negrão Rocha";
-  document.getElementById("fPD").value=h.pd||"";
-  vw("c");cc();
+  document.getElementById("fPD").value=h.pd||"";vw("c");cc();
 }
 </script>
 </body>
